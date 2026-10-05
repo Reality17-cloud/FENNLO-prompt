@@ -11,16 +11,22 @@ type NavigationProps = {
   threads: Pick<ClientThread, "id" | "title" | "status" | "clientName">[];
   path: string;
   close?: () => void;
+  accountEmail: string;
 };
 
-function NavigationContents({ threads, path, close }: NavigationProps) {
+function NavigationContents({
+  threads,
+  path,
+  close,
+  accountEmail,
+}: NavigationProps) {
   const active = threads.filter((t) => t.status === "ACTIVE");
   const history = threads.filter((t) => t.status !== "ACTIVE");
   return (
     <>
       <Link
         className="new-thread secondary"
-        href="/app"
+        href="/app?new=1"
         onClick={close}
         aria-current={path === "/app" ? "page" : undefined}
       >
@@ -50,42 +56,68 @@ function NavigationContents({ threads, path, close }: NavigationProps) {
         ))}
         {history.length > 0 && (
           <>
-            <p className="nav-label history-label">History</p>
-            {history.map((t) => (
-              <Link
-                key={t.id}
-                href={`/app/${t.id}`}
-                title={t.title}
-                aria-label={`${clientDisplayName(t.clientName)} — ${t.title}`}
-                aria-current={path === `/app/${t.id}` ? "page" : undefined}
-                onClick={close}
-              >
-                <ClientAvatar name={t.clientName} size="small" />
-                <span className="nav-client">
-                  <span>{clientDisplayName(t.clientName)}</span>
-                  <span className="nav-project">{t.title}</span>
-                  <span className="thread-status">
-                    {t.status === "ARCHIVED" ? "Archived" : "Complete"}
+            <details
+              className="nav-history"
+              open={history.some((t) => path === `/app/${t.id}`)}
+            >
+              <summary>
+                History <span>{history.length}</span>
+              </summary>
+              {history.map((t) => (
+                <Link
+                  key={t.id}
+                  href={`/app/${t.id}`}
+                  title={t.title}
+                  aria-label={`${clientDisplayName(t.clientName)} — ${t.title}`}
+                  aria-current={path === `/app/${t.id}` ? "page" : undefined}
+                  onClick={close}
+                >
+                  <ClientAvatar name={t.clientName} size="small" />
+                  <span className="nav-client">
+                    <span>{clientDisplayName(t.clientName)}</span>
+                    <span className="nav-project">{t.title}</span>
+                    <span className="thread-status">
+                      {t.status === "ARCHIVED" ? "Archived" : "Complete"}
+                    </span>
                   </span>
-                </span>
-              </Link>
-            ))}
+                </Link>
+              ))}
+            </details>
           </>
         )}
       </nav>
       <div className="sidebar-footer">
-        <Link href="/privacy" onClick={close}>
-          Privacy
+        <Link
+          href="/account"
+          className="sidebar-account"
+          aria-label="Account"
+          onClick={close}
+        >
+          <span className="account-symbol">
+            <Icon name="person" />
+          </span>
+          <span>
+            <strong>Account</strong>
+            <span className="sidebar-email">{accountEmail}</span>
+          </span>
         </Link>
-        <Link href="/terms" onClick={close}>
-          Terms
-        </Link>
+        <div className="sidebar-legal">
+          <Link href="/privacy" onClick={close}>
+            Privacy
+          </Link>
+          <Link href="/terms" onClick={close}>
+            Terms
+          </Link>
+        </div>
       </div>
     </>
   );
 }
 
-export function ThreadNav({ threads }: Pick<NavigationProps, "threads">) {
+export function ThreadNav({
+  threads,
+  accountEmail,
+}: Pick<NavigationProps, "threads" | "accountEmail">) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const drawer = useRef<HTMLDialogElement>(null);
@@ -117,7 +149,17 @@ export function ThreadNav({ threads }: Pick<NavigationProps, "threads">) {
         Clients
       </button>
       <aside className="sidebar desktop-sidebar">
-        <NavigationContents threads={threads} path={path} />
+        <div className="sidebar-brand">
+          <Link href="/app" className="wordmark">
+            FENNLO
+          </Link>
+          <span>Client Next Move</span>
+        </div>
+        <NavigationContents
+          threads={threads}
+          path={path}
+          accountEmail={accountEmail}
+        />
       </aside>
       <dialog
         id="thread-drawer"
@@ -162,7 +204,12 @@ export function ThreadNav({ threads }: Pick<NavigationProps, "threads">) {
             </button>
           </div>
           <div className="sidebar">
-            <NavigationContents threads={threads} path={path} close={close} />
+            <NavigationContents
+              threads={threads}
+              path={path}
+              accountEmail={accountEmail}
+              close={close}
+            />
           </div>
         </div>
       </dialog>

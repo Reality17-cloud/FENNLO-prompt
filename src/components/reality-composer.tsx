@@ -75,8 +75,9 @@ export function RealityComposer({
           )}
         </span>
         <button className="button" disabled={disabled || !value.trim()}>
-          {loading ? <LoadingIndicator /> : <Icon name="arrow" />}
+          {loading ? <LoadingIndicator /> : null}
           {loading ? "Determining…" : "Find next move"}
+          {!loading && <Icon name="arrow" />}
         </button>
       </div>
     </form>

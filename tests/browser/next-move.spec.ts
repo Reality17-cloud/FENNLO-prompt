@@ -19,6 +19,7 @@ async function newThread(
   goal = first.goal,
 ) {
   await page.goto("/app");
+  await page.getByRole("button", { name: "New client", exact: true }).click();
   await page.getByLabel("Client name", { exact: true }).fill("Sarah Chen");
   await page
     .getByLabel("What are you working on?", { exact: false })
@@ -99,8 +100,20 @@ test("signup, signout, invalid signin, valid signin and cookie security", async 
   expect(cookie.httpOnly).toBe(true);
   expect(cookie.sameSite).toBe("Lax");
   expect(cookie.value).toMatch(/^[a-f0-9]{64}$/);
+  const accountToggle = page.getByRole("button", {
+    name: "Clients",
+    exact: true,
+  });
+  if (
+    !(await page
+      .getByRole("link", { name: "Account", exact: true })
+      .isVisible()) &&
+    (await accountToggle.isVisible())
+  )
+    await accountToggle.click();
   await page.getByRole("link", { name: "Account", exact: true }).click();
-  await expect(page.getByText(email, { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/account$/);
+  await expect(page.locator(".account-email")).toHaveText(email);
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(page).toHaveURL(/\/signin$/);
   await page.getByLabel("Email", { exact: true }).fill(email);
@@ -132,7 +145,7 @@ test("persistent thread, result, copy, Why, reload and continued Formation", asy
     /current_state|next_formation|owner_id|password_hash/,
   );
   await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
-  await page.getByRole("button", { name: "Copy", exact: true }).click();
+  await page.getByRole("button", { name: "Copy reply", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Copied", exact: true }),
   ).toBeVisible();
@@ -161,7 +174,7 @@ test("persistent thread, result, copy, Why, reload and continued Formation", asy
     (await (await page.request.get(`/api/threads/${id}`)).json()).thread.goal,
   ).toBe(first.goal);
   await expect(
-    page.getByRole("button", { name: "Copy", exact: true }),
+    page.getByRole("button", { name: "Copy reply", exact: true }),
   ).toHaveCount(2);
 });
 
@@ -186,10 +199,18 @@ test("two independent threads, thread switching, goal editing, rename, archive a
   await expect(
     page.getByText(first.mock_result.send!, { exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Thread settings" }).click();
+  await page.getByRole("button", { name: "Client options" }).click();
+  await page
+    .getByRole("menuitem", { name: "Rename project", exact: true })
+    .click();
   await page
     .getByLabel("What are you working on?", { exact: true })
     .fill("Acme revised");
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Client options", exact: true })
+    .click();
+  await page.getByRole("menuitem", { name: "Edit goal", exact: true }).click();
   await page
     .getByLabel("Goal", { exact: true })
     .fill("Keep the relationship but decline this project.");
@@ -198,8 +219,14 @@ test("two independent threads, thread switching, goal editing, rename, archive a
     page.getByRole("heading", { name: "Acme revised" }),
   ).toBeVisible();
   await expect(page.getByText("Goal updated", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Thread settings" }).click();
-  await page.getByRole("button", { name: "Archive thread" }).click();
+  await page.getByRole("button", { name: "Client options" }).click();
+  await page.getByRole("menuitem", { name: "Archive client" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Archive this client?" }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Archive client", exact: true })
+    .click();
   await expect(
     page.getByRole("button", { name: "Reopen thread" }),
   ).toBeVisible();
@@ -258,7 +285,7 @@ test("WAIT has no manufactured message or copy action", async ({ page }) => {
     page.getByText("No message yet.", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Copy", exact: true }),
+    page.getByRole("button", { name: "Copy reply", exact: true }),
   ).toHaveCount(0);
   await page.getByText("Why this", { exact: true }).click();
   await expect(
@@ -322,7 +349,7 @@ test("long conversation, goal, output and 320px viewport have no overflow", asyn
   );
   await determine(page, "__long__" + "Client context ".repeat(1300));
   await expect(
-    page.getByRole("button", { name: "Copy", exact: true }),
+    page.getByRole("button", { name: "Copy reply", exact: true }),
   ).toBeVisible();
   await noOverflow(page);
   await page.setViewportSize({ width: 320, height: 780 });
@@ -336,7 +363,7 @@ test("copy failure offers manual copy", async ({ page }) => {
   await newThread(page);
   await determine(page);
   await expect(
-    page.getByRole("button", { name: "Copy", exact: true }),
+    page.getByRole("button", { name: "Copy reply", exact: true }),
   ).toBeVisible();
   await page.evaluate(() =>
     Object.defineProperty(navigator, "clipboard", {
@@ -348,7 +375,7 @@ test("copy failure offers manual copy", async ({ page }) => {
       configurable: true,
     }),
   );
-  await page.getByRole("button", { name: "Copy", exact: true }).click();
+  await page.getByRole("button", { name: "Copy reply", exact: true }).click();
   await expect(
     page.getByText(
       "Copy is unavailable. Select the message and copy it manually.",
@@ -399,7 +426,7 @@ test("account deletion confirmation erases history and invalidates another sessi
   const id = await newThread(page);
   await determine(page);
   await expect(
-    page.getByRole("button", { name: "Copy", exact: true }),
+    page.getByRole("button", { name: "Copy reply", exact: true }),
   ).toBeVisible();
   const other = await browser.newContext();
   try {
@@ -408,6 +435,17 @@ test("account deletion confirmation erases history and invalidates another sessi
       { data: { email, password } },
     );
     expect(res.status()).toBe(200);
+    const accountToggle = page.getByRole("button", {
+      name: "Clients",
+      exact: true,
+    });
+    if (
+      !(await page
+        .getByRole("link", { name: "Account", exact: true })
+        .isVisible()) &&
+      (await accountToggle.isVisible())
+    )
+      await accountToggle.click();
     await page.getByRole("link", { name: "Account", exact: true }).click();
     await page
       .getByRole("button", { name: "Delete account", exact: true })
@@ -468,7 +506,7 @@ test("invalid thread response fails safely and reloads the persisted result", as
     page.getByText("private reasoning", { exact: false }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "Copy", exact: true }),
+    page.getByRole("button", { name: "Copy reply", exact: true }),
   ).toBeVisible();
   await expect(page.getByLabel("Client update", { exact: true })).toBeEnabled();
 });

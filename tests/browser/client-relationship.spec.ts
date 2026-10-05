@@ -18,6 +18,7 @@ async function signup(page: Page) {
 }
 async function create(page: Page, clientName = "Sarah Chen") {
   await page.goto("/app");
+  await page.getByRole("button", { name: "New client", exact: true }).click();
   await page.getByLabel("Client name", { exact: true }).fill(clientName);
   await page
     .getByLabel("What are you working on?", { exact: false })
@@ -35,7 +36,7 @@ async function screenshot(page: Page, info: TestInfo, name: string) {
   ).toBe(true);
   await page.screenshot({
     path: resolve(
-      `../fennlo-relationship-review/${name}-${info.project.name}.png`,
+      `../fennlo-frontend-redesign/${name}-${info.project.name}.png`,
     ),
     fullPage: true,
     scale: "css",
@@ -54,6 +55,7 @@ test("empty account, named creation, sidebar, timestamp and explicit client rena
   await expect(
     page.getByRole("heading", { name: "Start with a client." }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "New client", exact: true }).click();
   await expect(page.getByLabel("Client name", { exact: true })).toHaveAttribute(
     "required",
     "",
@@ -91,7 +93,8 @@ test("empty account, named creation, sidebar, timestamp and explicit client rena
   await expect(page.getByText("Client Reality", { exact: true })).toHaveCount(
     0,
   );
-  await page.getByRole("button", { name: "Thread settings" }).click();
+  await page.getByRole("button", { name: "Client options" }).click();
+  await page.getByRole("menuitem", { name: "Edit client name" }).click();
   await page.getByLabel("Client name", { exact: true }).fill("Daniel Tan");
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page.locator(".thread-client-name")).toHaveText("Daniel Tan");
@@ -136,7 +139,8 @@ test("existing unnamed thread has a safe fallback and can gain a real client nam
     "placeholder",
     "Paste the client’s latest reply or tell Fennlo what changed…",
   );
-  await page.getByRole("button", { name: "Edit goal" }).click();
+  await page.getByRole("button", { name: "Client options" }).click();
+  await page.getByRole("menuitem", { name: "Edit client name" }).click();
   await page.getByLabel("Client name", { exact: true }).fill("Melissa");
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page.locator(".thread-client-name")).toHaveText("Melissa");
@@ -159,7 +163,7 @@ test("long client update and suggested reply remain readable and copyable", asyn
     .getByRole("button", { name: "Find next move", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Copy", exact: true }),
+    page.getByRole("button", { name: "Copy reply", exact: true }),
   ).toBeVisible();
   await page.locator(".client-event").evaluate((el) => {
     const viewport = el.closest(".timeline")!;
@@ -173,7 +177,7 @@ test("long client update and suggested reply remain readable and copyable", asyn
   });
   await screenshot(page, info, "long-suggested-reply");
   await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
-  await page.getByRole("button", { name: "Copy", exact: true }).click();
+  await page.getByRole("button", { name: "Copy reply", exact: true }).click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
     "Thank you for sharing the context. ".repeat(68).trim(),
   );

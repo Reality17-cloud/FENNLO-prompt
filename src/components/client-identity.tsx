@@ -1,4 +1,5 @@
 import { clientInitials } from "@/lib/client-display";
+import { avatarTone } from "./avatar-palette";
 
 export function ClientAvatar({
   name,
@@ -9,7 +10,7 @@ export function ClientAvatar({
 }) {
   return (
     <span
-      className={`client-avatar ${size === "small" ? "avatar-small" : ""}`}
+      className={`client-avatar avatar-${avatarTone(name)} ${size === "small" ? "avatar-small" : ""}`}
       aria-hidden="true"
     >
       {clientInitials(name)}

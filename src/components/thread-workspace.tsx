@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/client-api";
 import {
@@ -9,9 +9,8 @@ import {
 } from "@/lib/workspace-schema";
 import { ThreadEntry } from "./thread-entry";
 import { RealityComposer } from "./reality-composer";
-import { Icon, LoadingIndicator } from "./ui";
-import { ClientAvatar } from "./client-identity";
-import { clientDisplayName } from "@/lib/client-display";
+import { LoadingIndicator } from "./ui";
+import { ThreadHeader } from "./thread-header";
 export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
   const router = useRouter();
   const [detail, setDetail] = useState(initial);
@@ -19,7 +18,6 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
   const [busy, setBusy] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
-  const [settings, setSettings] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [notice, setNotice] = useState("");
   const timeline = useRef<HTMLElement>(null);
@@ -123,7 +121,7 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
     }
   }
   async function update(values: Record<string, unknown>) {
-    if (busy) return;
+    if (busy) return false;
     setBusy(true);
     setError("");
     try {
@@ -131,7 +129,6 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
         await api(base, "PATCH", { ...values, version: t.version }),
       );
       mergeLatest(next);
-      setSettings(false);
       setNotice(
         values.status === "ARCHIVED"
           ? "Thread archived."
@@ -142,21 +139,13 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
               : "Changes saved.",
       );
       router.refresh();
+      return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Please try again.");
+      return false;
     } finally {
       setBusy(false);
     }
-  }
-  async function saveSettings(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const data = new FormData(e.currentTarget);
-    const clientName = String(data.get("clientName") ?? "").trim();
-    await update({
-      title: data.get("title"),
-      ...(clientName ? { clientName } : {}),
-      ...(data.has("goal") ? { goal: data.get("goal") } : {}),
-    });
   }
   async function older() {
     setLoadingOlder(true);
@@ -177,169 +166,56 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
   }
   return (
     <div className="thread-workspace">
-      <header className="thread-header">
-        <div className="thread-title-line">
-          <div className="thread-identity">
-            <ClientAvatar name={t.clientName} />
-            <div>
-              <p
-                className="thread-client-name"
-                title={clientDisplayName(t.clientName)}
-              >
-                {clientDisplayName(t.clientName)}
-              </p>
-              <h1>{t.title}</h1>
-            </div>
-          </div>
-          <button
-            className="secondary compact settings-toggle"
-            aria-controls="thread-settings"
-            aria-expanded={settings}
-            onClick={() => setSettings(!settings)}
-          >
-            <Icon name="settings" />
-            <span>Thread settings</span>
-          </button>
-        </div>
-        <div className="goal-line">
-          <p aria-label="Persistent goal">{t.goal}</p>
-          <button
-            className="text-button goal-edit"
-            aria-label="Edit goal"
-            aria-controls="thread-settings"
-            aria-expanded={settings}
-            onClick={() => setSettings(!settings)}
-          >
-            Edit
-          </button>
-        </div>
-        {t.status !== "ACTIVE" && (
-          <p className="closed-note">
-            {t.status === "ARCHIVED" ? "Archived" : "Completed"} thread{" "}
-            <button
-              className="text-button"
-              disabled={busy}
-              onClick={() => update({ status: "ACTIVE" })}
-            >
-              Reopen thread
-            </button>
-          </p>
-        )}
-        {settings && (
-          <div className="thread-settings" id="thread-settings">
-            <form className="form-stack" onSubmit={saveSettings}>
-              <label htmlFor="edit-client-name">Client name</label>
-              <input
-                id="edit-client-name"
-                name="clientName"
-                defaultValue={t.clientName ?? ""}
-                maxLength={120}
-                required={Boolean(t.clientName)}
-                disabled={busy || t.processing}
-              />
-              <label htmlFor="edit-title">What are you working on?</label>
-              <input
-                id="edit-title"
-                name="title"
-                defaultValue={t.title}
-                maxLength={120}
-                required
-                disabled={busy || t.processing}
-              />
-              <label htmlFor="edit-goal">Goal</label>
-              <textarea
-                id="edit-goal"
-                name="goal"
-                defaultValue={t.goal}
-                maxLength={4000}
-                rows={3}
-                required
-                disabled={busy || t.processing || Boolean(unresolved)}
-              />
-              <p className="field-hint">
-                Goal changes stay in the timeline. Finish or retry the current
-                turn before changing the goal.
-              </p>
-              <div className="actions">
-                <button
-                  className="button compact"
-                  disabled={busy || t.processing}
-                >
-                  Save changes
-                </button>
-                <button
-                  type="button"
-                  className="secondary compact"
-                  onClick={() => setSettings(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-            {t.status === "ACTIVE" && (
-              <div className="thread-lifecycle">
-                <button
-                  className="text-button"
-                  disabled={busy || t.processing}
-                  onClick={() => update({ status: "ARCHIVED" })}
-                >
-                  Archive thread
-                </button>
-                <button
-                  className="text-button"
-                  disabled={busy || t.processing}
-                  onClick={() => update({ status: "COMPLETED" })}
-                >
-                  Mark complete
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-        <span className="save-notice" role="status">
-          {notice}
-        </span>
-      </header>
+      <ThreadHeader
+        thread={t}
+        busy={busy}
+        unresolved={Boolean(unresolved)}
+        error={error}
+        notice={notice}
+        onUpdate={update}
+      />
       <section
         ref={timeline}
         className="timeline"
         aria-label="Thread timeline"
         aria-busy={busy || t.processing}
       >
-        {detail.older && (
-          <button
-            className="secondary compact older-button"
-            onClick={older}
-            disabled={loadingOlder}
-          >
-            {loadingOlder ? "Loading…" : "Load earlier turns"}
-          </button>
-        )}
-        {detail.turns.length === 0 && (
-          <div className="timeline-empty">
-            <h2>What has happened so far?</h2>
-            <p>
-              Paste the client’s latest reply, a call summary, or a change in
-              the situation. Your next move will appear here.
+        <div className="timeline-content">
+          {detail.older && (
+            <button
+              className="secondary compact older-button"
+              onClick={older}
+              disabled={loadingOlder}
+            >
+              {loadingOlder ? "Loading…" : "Load earlier turns"}
+            </button>
+          )}
+          {detail.turns.length === 0 && (
+            <div className="timeline-empty">
+              <h2>What has happened so far?</h2>
+              <p>
+                Paste the client’s latest reply, a call summary, or a change in
+                the situation. Your next move will appear here.
+              </p>
+            </div>
+          )}
+          {detail.turns.map((turn) => (
+            <ThreadEntry
+              key={turn.id}
+              turn={turn}
+              clientName={t.clientName}
+              active={t.status === "ACTIVE"}
+              disabled={busy || t.processing}
+              onRetry={() => void determine(turn)}
+            />
+          ))}
+          {generating && (
+            <p className="loading-line" role="status">
+              <LoadingIndicator />
+              Determining the next move…
             </p>
-          </div>
-        )}
-        {detail.turns.map((turn) => (
-          <ThreadEntry
-            key={turn.id}
-            turn={turn}
-            clientName={t.clientName}
-            active={t.status === "ACTIVE"}
-            disabled={busy || t.processing}
-            onRetry={() => void determine(turn)}
-          />
-        ))}
-        {generating && (
-          <p className="loading-line" role="status">
-            <LoadingIndicator />
-            Determining the next move…
-          </p>
-        )}
+          )}
+        </div>
       </section>
       <div className="composer-region">
         {error && (

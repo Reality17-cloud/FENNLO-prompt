@@ -14,6 +14,10 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
         "--workspace-height",
         `${mobile ? viewport.height : window.innerHeight}px`,
       );
+      element.style.setProperty(
+        "--workspace-top",
+        `${mobile ? viewport.offsetTop : 0}px`,
+      );
       const editing = document.activeElement?.matches("input, textarea");
       element.classList.toggle(
         "keyboard-open",
@@ -24,11 +28,13 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
     };
     sync();
     viewport.addEventListener("resize", sync);
+    viewport.addEventListener("scroll", sync);
     window.addEventListener("resize", sync);
     document.addEventListener("focusin", sync);
     document.addEventListener("focusout", sync);
     return () => {
       viewport.removeEventListener("resize", sync);
+      viewport.removeEventListener("scroll", sync);
       window.removeEventListener("resize", sync);
       document.removeEventListener("focusin", sync);
       document.removeEventListener("focusout", sync);

@@ -18,15 +18,9 @@ export default async function AppLayout({
         <Link href="/app" className="wordmark">
           FENNLO
         </Link>
-        <span className="product-label">Client Next Move</span>
-        <Link className="account-link" href="/account">
-          Account
-        </Link>
       </header>
-      <div className="app-body">
-        <ThreadNav threads={threads} />
-        <main className="thread-main">{children}</main>
-      </div>
+      <ThreadNav threads={threads} accountEmail={user.email} />
+      <main className="thread-main">{children}</main>
     </WorkspaceShell>
   );
 }

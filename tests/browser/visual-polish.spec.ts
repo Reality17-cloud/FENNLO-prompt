@@ -16,6 +16,7 @@ async function signup(page: Page) {
 }
 async function createThread(page: Page, title = "Acme Website") {
   await page.goto("/app");
+  await page.getByRole("button", { name: "New client", exact: true }).click();
   await page.getByLabel("Client name", { exact: true }).fill("Sarah Chen");
   await page
     .getByLabel("What are you working on?", { exact: false })
@@ -42,7 +43,7 @@ async function capture(page: Page, info: TestInfo, name: string) {
   await noOverflow(page);
   await page.screenshot({
     path: resolve(
-      `../fennlo-relationship-review/${name}-${info.project.name}.png`,
+      `../fennlo-frontend-redesign/${name}-${info.project.name}.png`,
     ),
     fullPage: true,
     scale: "css",
@@ -61,7 +62,9 @@ test("one fictional client interaction and all landing CTAs lead to signup", asy
   await expect(preview.locator(".client-event")).toHaveCount(1);
   await expect(preview.locator(".formation-result")).toHaveCount(1);
   await expect(preview.locator("nav, textarea")).toHaveCount(0);
-  await expect(preview.getByText("Sarah Chen", { exact: true })).toBeVisible();
+  await expect(
+    preview.locator(".client-event").getByText("Sarah Chen", { exact: true }),
+  ).toBeVisible();
   await expect(preview.getByText("10:42 AM", { exact: true })).toBeVisible();
   await page
     .getByRole("link", { name: "Start with your first client" })
@@ -161,7 +164,7 @@ test("mobile drawer traps focus, Escape restores focus, and selected thread is c
   await toggle.click();
   await drawer.getByRole("link", { name: "New client", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Start with a client." }),
+    page.getByRole("heading", { name: "New client", exact: true }),
   ).toBeVisible();
   await expect(drawer).not.toBeVisible();
 });
@@ -184,6 +187,20 @@ test("rendered states for desktop and mobile visual review", async ({
   ).toBeVisible();
   await expect(page.locator(".timeline-turn")).toHaveCount(0);
   await capture(page, info, "empty-account");
+  for (const [clientName, title] of [
+    ["Daniel Tan", "Brand redesign"],
+    ["Melissa", "Landing page"],
+  ]) {
+    expect(
+      (
+        await page.request.post("/api/threads", {
+          data: { clientName, title, goal: "Agree a clear project scope." },
+        })
+      ).status(),
+    ).toBe(201);
+  }
+  await page.goto("/app?new=1");
+  await capture(page, info, "new-client");
   await createThread(page);
   await expect(
     page.getByRole("heading", { name: "What has happened so far?" }),
@@ -206,7 +223,7 @@ test("rendered states for desktop and mobile visual review", async ({
     page.locator(".client-event .client-name").last(),
   ).toBeInViewport({ ratio: 1 });
   await expect(
-    page.getByRole("button", { name: "Copy", exact: true }).last(),
+    page.getByRole("button", { name: "Copy reply", exact: true }).last(),
   ).toBeInViewport({ ratio: 1 });
   await page
     .getByLabel("Client update", { exact: true })
@@ -220,7 +237,7 @@ test("rendered states for desktop and mobile visual review", async ({
   await expect(
     page.locator(".timeline-turn").last().locator(".next-operation"),
   ).toBeInViewport({ ratio: 1 });
-  await expect(page.locator(".app-header")).toBeInViewport({ ratio: 1 });
+  await expect(page.locator(".thread-header")).toBeInViewport({ ratio: 1 });
   await expect(
     page.getByRole("heading", { name: "Acme Website", exact: true }),
   ).toBeInViewport({ ratio: 1 });
@@ -229,13 +246,24 @@ test("rendered states for desktop and mobile visual review", async ({
     page.locator(".client-event .client-name").last(),
   ).toBeInViewport({ ratio: 1 });
   await expect(
-    page.getByRole("button", { name: "Copy", exact: true }).last(),
+    page.getByRole("button", { name: "Copy reply", exact: true }).last(),
   ).toBeInViewport({ ratio: 1 });
   if (info.project.name === "mobile") {
     await page.getByRole("button", { name: "Clients", exact: true }).click();
     await capture(page, info, "drawer");
     await page.keyboard.press("Escape");
   }
+  const accountToggle = page.getByRole("button", {
+    name: "Clients",
+    exact: true,
+  });
+  if (
+    !(await page
+      .getByRole("link", { name: "Account", exact: true })
+      .isVisible()) &&
+    (await accountToggle.isVisible())
+  )
+    await accountToggle.click();
   await page.getByRole("link", { name: "Account", exact: true }).click();
   await capture(page, info, "account");
 });
@@ -277,7 +305,7 @@ test("public and working layouts fit every requested width with usable composer 
     await page
       .context()
       .grantPermissions(["clipboard-read", "clipboard-write"]);
-    await page.getByRole("button", { name: "Copy", exact: true }).click();
+    await page.getByRole("button", { name: "Copy reply", exact: true }).click();
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
       first.mock_result.send,
     );

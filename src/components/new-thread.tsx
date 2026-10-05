@@ -3,7 +3,9 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/client-api";
 import { threadSchema } from "@/lib/workspace-schema";
-export function NewThread() {
+import { Icon } from "./ui";
+export function NewThread({ startOpen = false }: { startOpen?: boolean }) {
+  const [creating, setCreating] = useState(startOpen);
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -34,61 +36,85 @@ export function NewThread() {
       setBusy(false);
     }
   }
+  if (!creating)
+    return (
+      <section className="workspace-welcome">
+        <div className="welcome-symbol" aria-hidden="true">
+          <Icon name="conversation" />
+        </div>
+        <p className="workspace-caption">Your client workspace</p>
+        <h1>Start with a client.</h1>
+        <p>
+          Add the person you’re working with, set what you want to achieve, then
+          bring in what has happened so far.
+        </p>
+        <button className="button" onClick={() => setCreating(true)}>
+          <Icon name="plus" />
+          New client
+        </button>
+      </section>
+    );
   return (
     <div className="new-thread-page">
-      <h1>Start with a client.</h1>
-      <p className="muted">
-        Add the person you’re working with, set what you want to achieve, then
-        bring in what has happened so far.
-      </p>
-      <form onSubmit={submit} className="form-stack">
-        <label htmlFor="client-name">Client name</label>
-        <input
-          id="client-name"
-          name="clientName"
-          placeholder="e.g. Sarah Chen"
-          maxLength={120}
-          required
-          disabled={busy}
-          autoComplete="off"
-        />
-        <label htmlFor="title">
-          What are you working on?{" "}
-          <span className="muted normal">(optional)</span>
-        </label>
-        <input
-          name="title"
-          id="title"
-          placeholder="e.g. Acme website"
-          maxLength={120}
-          disabled={busy}
-        />
-        <label htmlFor="goal">What are you trying to achieve?</label>
-        <textarea
-          name="goal"
-          id="goal"
-          placeholder="e.g. Close the project without discounting."
-          maxLength={4000}
-          rows={4}
-          required
-          disabled={busy}
-        />
-        <p className="field-hint">
-          Your goal stays with this thread. You can edit it later.
+      <div className="new-client-intro">
+        <p className="workspace-caption">A new conversation</p>
+        <h1>New client</h1>
+        <p className="muted">
+          Add the person you’re working with, set what you want to achieve, then
+          bring in what has happened so far.
         </p>
-        {error && (
-          <p className="error" role="alert">
-            {error}
+      </div>
+      <div className="new-client-form">
+        <form onSubmit={submit} className="form-stack">
+          <label htmlFor="client-name">Client name</label>
+          <input
+            id="client-name"
+            name="clientName"
+            placeholder="e.g. Sarah Chen"
+            maxLength={120}
+            required
+            disabled={busy}
+            autoComplete="off"
+            autoFocus
+          />
+          <label htmlFor="title">
+            What are you working on?{" "}
+            <span className="muted normal">(optional)</span>
+          </label>
+          <input
+            name="title"
+            id="title"
+            placeholder="e.g. Acme website"
+            maxLength={120}
+            disabled={busy}
+          />
+          <label htmlFor="goal">What are you trying to achieve?</label>
+          <textarea
+            name="goal"
+            id="goal"
+            placeholder="e.g. Close the project without discounting."
+            maxLength={4000}
+            rows={4}
+            required
+            disabled={busy}
+          />
+          <p className="field-hint">
+            Your goal stays with this thread. You can edit it later.
           </p>
-        )}
-        <button className="button" disabled={busy}>
-          {busy ? "Starting…" : "Start conversation"}
-        </button>
-      </form>
-      <p className="small muted privacy-note">
-        Only paste client information you have permission to use.{" "}
-        <a href="/privacy">How your data is handled</a>
-      </p>
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
+          <button className="button" disabled={busy}>
+            {busy ? "Starting…" : "Start conversation"}
+          </button>
+        </form>
+        <p className="small muted privacy-note">
+          Only paste client information you have permission to use.{" "}
+          <a href="/privacy">How your data is handled</a>
+        </p>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import type { ThreadTurn } from "@/lib/workspace-schema";
-import { Result } from "./result";
+import { FennloDecision, FennloIdentity } from "./fennlo-decision";
 import { LoadingIndicator } from "./ui";
 import { ClientEvent } from "./client-event";
 import { ConversationTime } from "./conversation-time";
@@ -39,9 +39,9 @@ export function ThreadEntry({
             timestamp={turn.createdAt}
           />
           <div className="fennlo-turn">
-            <span className="author-label">Fennlo</span>
+            <FennloIdentity />
             {turn.result ? (
-              <Result result={turn.result} />
+              <FennloDecision result={turn.result} />
             ) : turn.status === "FAILED" ? (
               <div className="turn-failure">
                 <p>{turn.error}</p>
