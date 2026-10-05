@@ -38,6 +38,65 @@ afterAll(async () => {
   await admin.end();
 });
 describe("real PostgreSQL workspace", () => {
+  it("persists and edits client identity without changing goals, turns, Formation or provider input", async () => {
+    const t = await threads.create(a.user.id, {
+      clientName: " Sarah Chen ",
+      title: "Acme Website",
+      goal: first.goal,
+    });
+    expect(t.clientName).toBe("Sarah Chen");
+    expect(await threads.list(a.user.id)).toContainEqual({
+      id: t.id,
+      title: "Acme Website",
+      status: "ACTIVE",
+      clientName: "Sarah Chen",
+    });
+    const generate = vi.fn(async () => first.mock_result);
+    await threads.determine(
+      a.user.id,
+      t.id,
+      { id: randomUUID(), reality: first.conversation },
+      { generate },
+    );
+    expect(JSON.stringify(generate.mock.calls)).not.toContain("Sarah Chen");
+    const before = await threads.detail(a.user.id, t.id);
+    const formation = (
+      await pool.query("SELECT formation FROM client_threads WHERE id=$1", [
+        t.id,
+      ])
+    ).rows[0].formation;
+    await expect(
+      threads.update(b.user.id, t.id, {
+        clientName: "Stolen",
+        version: before.thread.version,
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await threads.update(a.user.id, t.id, {
+      clientName: "Daniel Tan",
+      version: before.thread.version,
+    });
+    const after = await threads.detail(a.user.id, t.id);
+    expect(after.thread.clientName).toBe("Daniel Tan");
+    expect(after.thread.goal).toBe(before.thread.goal);
+    expect(after.thread.title).toBe(before.thread.title);
+    expect(after.turns).toEqual(before.turns);
+    expect(
+      (
+        await pool.query("SELECT formation FROM client_threads WHERE id=$1", [
+          t.id,
+        ])
+      ).rows[0].formation,
+    ).toEqual(formation);
+    const legacy = await threads.create(a.user.id, { goal: first.goal });
+    expect(legacy.clientName).toBeNull();
+    await threads.update(a.user.id, legacy.id, {
+      title: "Existing project",
+      version: 0,
+    });
+    expect(
+      (await threads.detail(a.user.id, legacy.id)).thread.clientName,
+    ).toBeNull();
+  });
   it("stores only password and session hashes; opaque expiring sessions authenticate", async () => {
     const user = (
       await pool.query("SELECT * FROM users WHERE id=$1", [a.user.id])

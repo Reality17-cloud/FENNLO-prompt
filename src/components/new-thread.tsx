@@ -16,6 +16,7 @@ export function NewThread() {
     try {
       const value = await api("/api/threads", "POST", {
         title: data.get("title"),
+        clientName: data.get("clientName"),
         goal: data.get("goal"),
       });
       const parsed = threadSchema.safeParse(
@@ -35,15 +36,25 @@ export function NewThread() {
   }
   return (
     <div className="new-thread-page">
-      <p className="eyebrow">New client thread</p>
       <h1>Start with a client.</h1>
       <p className="muted">
-        Give the conversation a name and a goal. Then add what has happened so
-        far.
+        Add the person you’re working with, set what you want to achieve, then
+        bring in what has happened so far.
       </p>
       <form onSubmit={submit} className="form-stack">
+        <label htmlFor="client-name">Client name</label>
+        <input
+          id="client-name"
+          name="clientName"
+          placeholder="e.g. Sarah Chen"
+          maxLength={120}
+          required
+          disabled={busy}
+          autoComplete="off"
+        />
         <label htmlFor="title">
-          Thread name <span className="muted normal">(optional)</span>
+          What are you working on?{" "}
+          <span className="muted normal">(optional)</span>
         </label>
         <input
           name="title"
@@ -71,7 +82,7 @@ export function NewThread() {
           </p>
         )}
         <button className="button" disabled={busy}>
-          {busy ? "Creating…" : "Create client thread"}
+          {busy ? "Starting…" : "Start conversation"}
         </button>
       </form>
       <p className="small muted privacy-note">

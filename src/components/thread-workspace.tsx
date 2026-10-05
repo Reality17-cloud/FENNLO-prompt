@@ -10,6 +10,8 @@ import {
 import { ThreadEntry } from "./thread-entry";
 import { RealityComposer } from "./reality-composer";
 import { Icon, LoadingIndicator } from "./ui";
+import { ClientAvatar } from "./client-identity";
+import { clientDisplayName } from "@/lib/client-display";
 export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
   const router = useRouter();
   const [detail, setDetail] = useState(initial);
@@ -27,7 +29,12 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
     // Keep programmatic scrolling inside the timeline, preserving the mobile shell.
     const viewport = timeline.current;
     const turn = viewport?.querySelector(".timeline-turn:last-of-type");
-    const target = turn?.querySelector(".fennlo-turn") ?? turn;
+    const client = turn?.querySelector(".client-event");
+    const target =
+      client &&
+      client.getBoundingClientRect().height < (viewport?.clientHeight ?? 0) / 2
+        ? turn
+        : (turn?.querySelector(".fennlo-turn") ?? turn);
     if (!viewport || !target) return;
     viewport.scrollTo({
       top:
@@ -144,8 +151,10 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
   async function saveSettings(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
+    const clientName = String(data.get("clientName") ?? "").trim();
     await update({
       title: data.get("title"),
+      ...(clientName ? { clientName } : {}),
       ...(data.has("goal") ? { goal: data.get("goal") } : {}),
     });
   }
@@ -170,7 +179,18 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
     <div className="thread-workspace">
       <header className="thread-header">
         <div className="thread-title-line">
-          <h1>{t.title}</h1>
+          <div className="thread-identity">
+            <ClientAvatar name={t.clientName} />
+            <div>
+              <p
+                className="thread-client-name"
+                title={clientDisplayName(t.clientName)}
+              >
+                {clientDisplayName(t.clientName)}
+              </p>
+              <h1>{t.title}</h1>
+            </div>
+          </div>
           <button
             className="secondary compact settings-toggle"
             aria-controls="thread-settings"
@@ -182,8 +202,16 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
           </button>
         </div>
         <div className="goal-line">
-          <span>Goal</span>
-          <p>{t.goal}</p>
+          <p aria-label="Persistent goal">{t.goal}</p>
+          <button
+            className="text-button goal-edit"
+            aria-label="Edit goal"
+            aria-controls="thread-settings"
+            aria-expanded={settings}
+            onClick={() => setSettings(!settings)}
+          >
+            Edit
+          </button>
         </div>
         {t.status !== "ACTIVE" && (
           <p className="closed-note">
@@ -200,7 +228,16 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
         {settings && (
           <div className="thread-settings" id="thread-settings">
             <form className="form-stack" onSubmit={saveSettings}>
-              <label htmlFor="edit-title">Thread name</label>
+              <label htmlFor="edit-client-name">Client name</label>
+              <input
+                id="edit-client-name"
+                name="clientName"
+                defaultValue={t.clientName ?? ""}
+                maxLength={120}
+                required={Boolean(t.clientName)}
+                disabled={busy || t.processing}
+              />
+              <label htmlFor="edit-title">What are you working on?</label>
               <input
                 id="edit-title"
                 name="title"
@@ -291,6 +328,7 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
           <ThreadEntry
             key={turn.id}
             turn={turn}
+            clientName={t.clientName}
             active={t.status === "ACTIVE"}
             disabled={busy || t.processing}
             onRetry={() => void determine(turn)}
@@ -317,10 +355,12 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
             disabled={busy || t.processing || Boolean(unresolved)}
             loading={generating || t.processing}
             blocked={Boolean(unresolved)}
-            threadTitle={t.title}
+            clientName={t.clientName}
           />
         ) : (
-          <p className="muted small">Reopen this thread to add new Reality.</p>
+          <p className="muted small">
+            Reopen this thread to add a client update.
+          </p>
         )}
       </div>
     </div>

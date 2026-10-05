@@ -18,19 +18,20 @@ export function Result({ result }: { result: PublicNextMove }) {
   return (
     <div className="formation-result">
       <div className="next-operation">
-        <span className="eyebrow">Next move</span>
         <p>{result.next_move}</p>
       </div>
       {result.send !== null ? (
         <div className="message-surface">
           <div className="message-heading">
-            <span className="eyebrow">Message</span>
+            <span>Suggested reply</span>
+          </div>
+          <p className="client-message">{result.send}</p>
+          <div className="message-actions">
             <button className="copy-button secondary compact" onClick={copy}>
               <Icon name={copied ? "check" : "copy"} />
               {copied ? "Copied" : "Copy"}
             </button>
           </div>
-          <p className="client-message">{result.send}</p>
           <span className="sr-only" role="status">
             {copied ? "Message copied to clipboard." : ""}
           </span>

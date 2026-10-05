@@ -3,6 +3,7 @@ import { pageAccount } from "@/lib/auth";
 import { database } from "@/lib/db";
 import { ThreadService } from "@/lib/threads";
 import { ThreadNav } from "@/components/thread-nav";
+import { WorkspaceShell } from "@/components/workspace-shell";
 export const dynamic = "force-dynamic";
 export default async function AppLayout({
   children,
@@ -12,7 +13,7 @@ export default async function AppLayout({
   const user = await pageAccount();
   const threads = await new ThreadService(database()).list(user.id);
   return (
-    <div className="app-shell">
+    <WorkspaceShell>
       <header className="app-header">
         <Link href="/app" className="wordmark">
           FENNLO
@@ -26,6 +27,6 @@ export default async function AppLayout({
         <ThreadNav threads={threads} />
         <main className="thread-main">{children}</main>
       </div>
-    </div>
+    </WorkspaceShell>
   );
 }

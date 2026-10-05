@@ -4,9 +4,11 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { ClientThread } from "@/lib/workspace-schema";
 import { Icon } from "./ui";
+import { ClientAvatar } from "./client-identity";
+import { clientDisplayName } from "@/lib/client-display";
 
 type NavigationProps = {
-  threads: Pick<ClientThread, "id" | "title" | "status">[];
+  threads: Pick<ClientThread, "id" | "title" | "status" | "clientName">[];
   path: string;
   close?: () => void;
 };
@@ -26,19 +28,24 @@ function NavigationContents({ threads, path, close }: NavigationProps) {
         New client
       </Link>
       <nav aria-label="Client threads">
-        <p className="nav-label">Active threads</p>
+        <p className="nav-label">Clients</p>
         {active.length === 0 && (
-          <p className="nav-empty">Your client threads will live here.</p>
+          <p className="nav-empty">Your clients will appear here.</p>
         )}
         {active.map((t) => (
           <Link
             key={t.id}
             href={`/app/${t.id}`}
             title={t.title}
+            aria-label={`${clientDisplayName(t.clientName)} — ${t.title}`}
             aria-current={path === `/app/${t.id}` ? "page" : undefined}
             onClick={close}
           >
-            {t.title}
+            <ClientAvatar name={t.clientName} size="small" />
+            <span className="nav-client">
+              <span>{clientDisplayName(t.clientName)}</span>
+              <span className="nav-project">{t.title}</span>
+            </span>
           </Link>
         ))}
         {history.length > 0 && (
@@ -49,12 +56,17 @@ function NavigationContents({ threads, path, close }: NavigationProps) {
                 key={t.id}
                 href={`/app/${t.id}`}
                 title={t.title}
+                aria-label={`${clientDisplayName(t.clientName)} — ${t.title}`}
                 aria-current={path === `/app/${t.id}` ? "page" : undefined}
                 onClick={close}
               >
-                {t.title}
-                <span className="thread-status">
-                  {t.status === "ARCHIVED" ? "Archived" : "Complete"}
+                <ClientAvatar name={t.clientName} size="small" />
+                <span className="nav-client">
+                  <span>{clientDisplayName(t.clientName)}</span>
+                  <span className="nav-project">{t.title}</span>
+                  <span className="thread-status">
+                    {t.status === "ARCHIVED" ? "Archived" : "Complete"}
+                  </span>
                 </span>
               </Link>
             ))}
@@ -102,7 +114,7 @@ export function ThreadNav({ threads }: Pick<NavigationProps, "threads">) {
         }}
       >
         <Icon name="panel" />
-        Threads
+        Clients
       </button>
       <aside className="sidebar desktop-sidebar">
         <NavigationContents threads={threads} path={path} />
@@ -111,7 +123,7 @@ export function ThreadNav({ threads }: Pick<NavigationProps, "threads">) {
         id="thread-drawer"
         ref={drawer}
         className="thread-drawer"
-        aria-label="Client thread navigation"
+        aria-label="Client navigation"
         onKeyDown={(e) => {
           if (e.key !== "Tab") return;
           const focusable = Array.from(
@@ -142,7 +154,7 @@ export function ThreadNav({ threads }: Pick<NavigationProps, "threads">) {
             <span className="wordmark">FENNLO</span>
             <button
               className="icon-button"
-              aria-label="Close thread navigation"
+              aria-label="Close client navigation"
               onClick={close}
               autoFocus
             >

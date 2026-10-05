@@ -1,6 +1,7 @@
 "use client";
 import { useLayoutEffect, useRef, type FormEvent } from "react";
 import { Icon, LoadingIndicator } from "./ui";
+import { clientPlaceholder } from "@/lib/client-display";
 
 export function RealityComposer({
   value,
@@ -9,7 +10,7 @@ export function RealityComposer({
   disabled,
   loading,
   blocked,
-  threadTitle,
+  clientName,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -17,7 +18,7 @@ export function RealityComposer({
   disabled: boolean;
   loading: boolean;
   blocked: boolean;
-  threadTitle: string;
+  clientName: string | null;
 }) {
   const input = useRef<HTMLTextAreaElement>(null);
   useLayoutEffect(() => {
@@ -37,18 +38,15 @@ export function RealityComposer({
   }
   return (
     <form onSubmit={submit} className="reality-composer" aria-busy={loading}>
-      <div className="composer-heading">
-        <label htmlFor="reality">New Reality</label>
-        <span className="composer-context" title={threadTitle}>
-          {threadTitle}
-        </span>
-      </div>
+      <label htmlFor="reality" className="sr-only">
+        Client update
+      </label>
       <textarea
         ref={input}
         id="reality"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Paste the client’s latest reply or tell Fennlo what changed…"
+        placeholder={clientPlaceholder(clientName)}
         maxLength={20000}
         rows={2}
         disabled={disabled}
@@ -72,7 +70,6 @@ export function RealityComposer({
             "Resolve the unfinished turn above to continue."
           ) : (
             <>
-              Your goal stays with this thread.
               <span className="keyboard-hint">Ctrl / ⌘ + Enter to submit</span>
             </>
           )}

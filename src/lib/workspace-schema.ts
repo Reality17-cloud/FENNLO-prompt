@@ -14,12 +14,14 @@ export const signupSchema = credentialsSchema.extend({
 export const createThreadSchema = z
   .object({
     title: z.string().trim().max(120).optional(),
+    clientName: z.string().trim().min(1).max(120).optional(),
     goal: z.string().trim().min(1).max(4000),
   })
   .strict();
 export const updateThreadSchema = z
   .object({
     title: z.string().trim().min(1).max(120).optional(),
+    clientName: z.string().trim().min(1).max(120).optional(),
     goal: z.string().trim().min(1).max(4000).optional(),
     status: z.enum(["ACTIVE", "ARCHIVED", "COMPLETED"]).optional(),
     version: z.number().int().nonnegative(),
@@ -27,7 +29,10 @@ export const updateThreadSchema = z
   .strict()
   .refine(
     (v) =>
-      v.title !== undefined || v.goal !== undefined || v.status !== undefined,
+      v.title !== undefined ||
+      v.clientName !== undefined ||
+      v.goal !== undefined ||
+      v.status !== undefined,
   );
 export const turnInputSchema = z
   .object({ id: z.uuid(), reality: z.string().trim().min(1).max(20000) })
@@ -36,6 +41,7 @@ export const threadSchema = z
   .object({
     id: z.uuid(),
     title: z.string(),
+    clientName: z.string().nullable().default(null),
     goal: z.string(),
     status: z.enum(["ACTIVE", "ARCHIVED", "COMPLETED"]),
     version: z.number(),

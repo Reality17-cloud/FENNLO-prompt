@@ -131,13 +131,18 @@ try {
   const { thread } = await request(
     "/api/threads",
     "POST",
-    { title: "Restart persistence", goal: fixtures[0].goal },
+    {
+      title: "Restart persistence",
+      clientName: "Sarah Chen",
+      goal: fixtures[0].goal,
+    },
     201,
   );
   const before = await request(`/api/threads/${thread.id}/turns`, "POST", {
     id: randomUUID(),
     reality: fixtures[0].conversation,
   });
+  assert.equal(before.thread.clientName, "Sarah Chen");
   assert.equal(before.turns.length, 1);
   assert.equal(before.turns[0].result.send, fixtures[0].mock_result.send);
   await stop(app);
@@ -160,6 +165,7 @@ try {
     id: randomUUID(),
     reality: "__continue__",
   });
+  assert.equal(after.thread.clientName, "Sarah Chen");
   assert.equal(after.turns.length, 2);
   assert.equal(after.thread.goal, fixtures[0].goal);
   assert.equal(after.turns[1].result.send, fixtures[1].mock_result.send);

@@ -24,6 +24,7 @@ type ThreadRow = {
   id: string;
   owner_id: string;
   title: string;
+  client_name: string | null;
   goal: string;
   status: "ACTIVE" | "ARCHIVED" | "COMPLETED";
   version: number;
@@ -53,6 +54,7 @@ const publicThread = (t: ThreadRow) =>
   threadSchema.parse({
     id: t.id,
     title: t.title,
+    clientName: t.client_name,
     goal: t.goal,
     status: t.status,
     version: t.version,
@@ -86,9 +88,9 @@ export class ThreadService {
   constructor(private readonly pool: Pool) {}
   async list(owner: string) {
     const { rows } = await this.pool.query<
-      Pick<ClientThread, "id" | "title" | "status">
+      Pick<ClientThread, "id" | "title" | "status" | "clientName">
     >(
-      "SELECT id,title,status FROM client_threads WHERE owner_id=$1 ORDER BY updated_at DESC,id",
+      'SELECT id,title,status,client_name AS "clientName" FROM client_threads WHERE owner_id=$1 ORDER BY updated_at DESC,id',
       [owner],
     );
     return rows;
@@ -104,8 +106,14 @@ export class ThreadService {
       if (Number(count.rows[0].count) >= 1000)
         throw new AppError("RATE_LIMITED");
       const { rows } = await c.query<ThreadRow>(
-        "INSERT INTO client_threads(id,owner_id,title,goal) VALUES($1,$2,$3,$4) RETURNING *",
-        [randomUUID(), owner, data.title || "Untitled client", data.goal],
+        "INSERT INTO client_threads(id,owner_id,title,goal,client_name) VALUES($1,$2,$3,$4,$5) RETURNING *",
+        [
+          randomUUID(),
+          owner,
+          data.title || "Untitled client",
+          data.goal,
+          data.clientName ?? null,
+        ],
       );
       return publicThread(rows[0]);
     });
@@ -155,13 +163,14 @@ export class ThreadService {
         );
       }
       await c.query(
-        "UPDATE client_threads SET title=$3,goal=$4,status=$5,version=version+1,updated_at=now() WHERE id=$1 AND owner_id=$2",
+        "UPDATE client_threads SET title=$3,goal=$4,status=$5,client_name=$6,version=version+1,updated_at=now() WHERE id=$1 AND owner_id=$2",
         [
           id,
           owner,
           data.title ?? t.title,
           data.goal ?? t.goal,
           data.status ?? t.status,
+          data.clientName ?? t.client_name,
         ],
       );
     });

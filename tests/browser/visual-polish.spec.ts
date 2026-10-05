@@ -16,9 +16,12 @@ async function signup(page: Page) {
 }
 async function createThread(page: Page, title = "Acme Website") {
   await page.goto("/app");
-  await page.getByLabel("Thread name", { exact: false }).fill(title);
+  await page.getByLabel("Client name", { exact: true }).fill("Sarah Chen");
+  await page
+    .getByLabel("What are you working on?", { exact: false })
+    .fill(title);
   await page.getByLabel("What are you trying to achieve?").fill(first.goal);
-  await page.getByRole("button", { name: "Create client thread" }).click();
+  await page.getByRole("button", { name: "Start conversation" }).click();
   await expect(
     page.getByRole("heading", { name: title, exact: true }),
   ).toBeVisible();
@@ -38,29 +41,33 @@ async function capture(page: Page, info: TestInfo, name: string) {
   await page.evaluate(() => document.fonts.ready);
   await noOverflow(page);
   await page.screenshot({
-    path: resolve(`../fennlo-visual-review/${name}-${info.project.name}.png`),
+    path: resolve(
+      `../fennlo-relationship-review/${name}-${info.project.name}.png`,
+    ),
     fullPage: true,
     scale: "css",
   });
 }
 
-test("product preview shows continuity and both landing CTAs lead to signup", async ({
+test("one fictional client interaction and all landing CTAs lead to signup", async ({
   page,
 }) => {
   await page.goto("/");
   const preview = page.getByRole("region", { name: "Example client thread" });
-  await expect(
-    preview.getByText("Example workspace · fictional client"),
-  ).toBeVisible();
+  await expect(preview.getByText("Fictional example")).toBeVisible();
   await expect(
     preview.getByText("The price is a little high.", { exact: true }),
   ).toBeVisible();
-  await expect(
-    preview.getByText(
-      "It’s actually fine. I just need approval from my manager.",
-      { exact: true },
-    ),
-  ).toBeVisible();
+  await expect(preview.locator(".client-event")).toHaveCount(1);
+  await expect(preview.locator(".formation-result")).toHaveCount(1);
+  await expect(preview.locator("nav, textarea")).toHaveCount(0);
+  await expect(preview.getByText("Sarah Chen", { exact: true })).toBeVisible();
+  await expect(preview.getByText("10:42 AM", { exact: true })).toBeVisible();
+  await page
+    .getByRole("link", { name: "Start with your first client" })
+    .click();
+  await expect(page).toHaveURL(/\/signup$/);
+  await page.goto("/");
   const links = page.getByRole("link", { name: "Get started" });
   for (let i = 0; i < 2; i++) {
     await links.nth(i).click();
@@ -84,7 +91,7 @@ test("composer preserves Enter, expands for multiline input, and submits explici
 }) => {
   await signup(page);
   await createThread(page);
-  const input = page.getByLabel("New Reality", { exact: true });
+  const input = page.getByLabel("Client update", { exact: true });
   const submit = page.getByRole("button", {
     name: "Find next move",
     exact: true,
@@ -127,15 +134,18 @@ test("mobile drawer traps focus, Escape restores focus, and selected thread is c
   await page.setViewportSize({ width: 390, height: 844 });
   await signup(page);
   await createThread(page);
-  const toggle = page.getByRole("button", { name: "Threads", exact: true });
+  const toggle = page.getByRole("button", { name: "Clients", exact: true });
   await toggle.click();
-  const drawer = page.getByRole("dialog", { name: "Client thread navigation" });
+  const drawer = page.getByRole("dialog", { name: "Client navigation" });
   await expect(drawer).toBeVisible();
   await expect(
-    drawer.getByRole("link", { name: "Acme Website", exact: true }),
+    drawer.getByRole("link", {
+      name: "Sarah Chen — Acme Website",
+      exact: true,
+    }),
   ).toHaveAttribute("aria-current", "page");
   await expect(
-    drawer.getByRole("button", { name: "Close thread navigation" }),
+    drawer.getByRole("button", { name: "Close client navigation" }),
   ).toBeFocused();
   await page.keyboard.press("Shift+Tab");
   await expect(
@@ -143,7 +153,7 @@ test("mobile drawer traps focus, Escape restores focus, and selected thread is c
   ).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(
-    drawer.getByRole("button", { name: "Close thread navigation" }),
+    drawer.getByRole("button", { name: "Close client navigation" }),
   ).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(drawer).not.toBeVisible();
@@ -180,7 +190,7 @@ test("rendered states for desktop and mobile visual review", async ({
   ).toBeVisible();
   await capture(page, info, "new-thread");
   await page
-    .getByLabel("New Reality", { exact: true })
+    .getByLabel("Client update", { exact: true })
     .fill(first.conversation);
   await page
     .getByRole("button", { name: "Find next move", exact: true })
@@ -192,8 +202,14 @@ test("rendered states for desktop and mobile visual review", async ({
     page.locator(".timeline-turn").last().locator(".next-operation"),
   ).toBeInViewport({ ratio: 1 });
   await capture(page, info, "one-result");
+  await expect(
+    page.locator(".client-event .client-name").last(),
+  ).toBeInViewport({ ratio: 1 });
+  await expect(
+    page.getByRole("button", { name: "Copy", exact: true }).last(),
+  ).toBeInViewport({ ratio: 1 });
   await page
-    .getByLabel("New Reality", { exact: true })
+    .getByLabel("Client update", { exact: true })
     .fill(second.conversation);
   await page
     .getByRole("button", { name: "Find next move", exact: true })
@@ -209,8 +225,14 @@ test("rendered states for desktop and mobile visual review", async ({
     page.getByRole("heading", { name: "Acme Website", exact: true }),
   ).toBeInViewport({ ratio: 1 });
   await capture(page, info, "continuing-thread");
+  await expect(
+    page.locator(".client-event .client-name").last(),
+  ).toBeInViewport({ ratio: 1 });
+  await expect(
+    page.getByRole("button", { name: "Copy", exact: true }).last(),
+  ).toBeInViewport({ ratio: 1 });
   if (info.project.name === "mobile") {
-    await page.getByRole("button", { name: "Threads", exact: true }).click();
+    await page.getByRole("button", { name: "Clients", exact: true }).click();
     await capture(page, info, "drawer");
     await page.keyboard.press("Escape");
   }
@@ -228,7 +250,7 @@ test("public and working layouts fit every requested width with usable composer 
   await createThread(page);
   const threadUrl = page.url();
   await page
-    .getByLabel("New Reality", { exact: true })
+    .getByLabel("Client update", { exact: true })
     .fill(first.conversation);
   await page
     .getByRole("button", { name: "Find next move", exact: true })
@@ -247,7 +269,7 @@ test("public and working layouts fit every requested width with usable composer 
     await expect(
       page.getByText(first.mock_result.send!, { exact: true }),
     ).toBeVisible();
-    const input = page.getByLabel("New Reality", { exact: true });
+    const input = page.getByLabel("Client update", { exact: true });
     await input.fill("The client has replied.");
     await expect(
       page.getByRole("button", { name: "Find next move", exact: true }),

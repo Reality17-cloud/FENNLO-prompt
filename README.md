@@ -8,10 +8,10 @@ The goal is direction, not evidence. **Never jump over a missing Formation.** Th
 
 Next.js App Router / React / TypeScript; PostgreSQL via `pg`; Zod validates request, state and result boundaries. Authentication, database access and the OpenAI-compatible provider are server-only modules.
 
-- `/`: compact public page with an explicitly labeled example.
+- `/`: one explicitly fictional client interaction, using the real conversation/reply components.
 - `/signup`, `/signin`: email/password authentication.
 - `/app`: authenticated thread creation and navigation.
-- `/app/[threadId]`: saved timeline, persistent goal, new-Reality composer, results and thread settings.
+- `/app/[threadId]`: client identity, local conversation timestamps, continuous timeline, persistent goal, personalized client-update composer, suggested replies and thread settings.
 - `/account`: email, sign out and password-confirmed account deletion.
 - `/privacy`, `/terms`: implementation-specific beta policies.
 
@@ -23,9 +23,9 @@ API:
 | `POST /api/auth/signin`        | `{ email, password }`, establish session                                                        |
 | `POST /api/auth/signout`       | Revoke current session                                                                          |
 | `POST /api/auth/delete`        | `{ password, confirmation: "DELETE" }`, cascade account data                                    |
-| `GET/POST /api/threads`        | List owned threads / create `{ title?, goal }`                                                  |
+| `GET/POST /api/threads`        | List owned threads / create `{ clientName?, title?, goal }`                                     |
 | `GET /api/threads/[id]`        | Owned thread and latest 50 timeline entries; `?before=sequence` loads older entries             |
-| `PATCH /api/threads/[id]`      | Explicit `{ version, title?, goal?, status? }` mutation                                         |
+| `PATCH /api/threads/[id]`      | Explicit `{ version, clientName?, title?, goal?, status? }` mutation                            |
 | `POST /api/threads/[id]/turns` | `{ id: UUID, reality }`, idempotent determination/retry                                         |
 | `POST /api/next-move`          | Authenticated compatibility endpoint; retains the original three-field one-shot result contract |
 
@@ -51,7 +51,7 @@ Migration `001_workspace.sql` adds:
 - `client_threads`: owner, title, goal, active/archive/complete status, version, current internal Formation and inference lease.
 - `thread_turns`: ordered immutable Reality/explicit-goal events, original goal, pending/complete/failed status, public result and verified internal snapshot.
 
-`002_generation_lease.sql` adds a distinct attempt token, so an expired worker cannot commit over a retry of the same turn ID. `schema_migrations` records ordered migration checksums. The runner uses a PostgreSQL advisory lock and one transaction per migration. Applied migrations must not be edited; add a new migration.
+`002_generation_lease.sql` adds a distinct attempt token, so an expired worker cannot commit over a retry of the same turn ID. `003_client_identity.sql` adds nullable `client_threads.client_name` (1–120 trimmed characters when supplied). Older threads retain a null name and display as "Client"; no person is invented or backfilled. The UI requires a name for new conversations, while older API clients may continue omitting it. Names and generated initials are display metadata only and never enter Formation/provider input. `schema_migrations` records ordered migration checksums. The runner uses a PostgreSQL advisory lock and one transaction per migration. Applied migrations must not be edited; add a new migration.
 
 Use PostgreSQL 15+ for deployment (local verification uses actual PostgreSQL 18). Set `DATABASE_URL`, then run from the repository root:
 

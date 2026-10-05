@@ -19,9 +19,12 @@ async function newThread(
   goal = first.goal,
 ) {
   await page.goto("/app");
-  await page.getByLabel("Thread name", { exact: false }).fill(title);
+  await page.getByLabel("Client name", { exact: true }).fill("Sarah Chen");
+  await page
+    .getByLabel("What are you working on?", { exact: false })
+    .fill(title);
   await page.getByLabel("What are you trying to achieve?").fill(goal);
-  await page.getByRole("button", { name: "Create client thread" }).click();
+  await page.getByRole("button", { name: "Start conversation" }).click();
   await expect(page).toHaveURL(/\/app\/[a-f0-9-]+$/);
   await expect(
     page.getByRole("heading", { name: title, exact: true }),
@@ -29,13 +32,13 @@ async function newThread(
   return page.url().split("/").at(-1)!;
 }
 async function determine(page: Page, reality = first.conversation) {
-  await page.getByLabel("New Reality", { exact: true }).fill(reality);
+  await page.getByLabel("Client update", { exact: true }).fill(reality);
   await page
     .getByRole("button", { name: "Find next move", exact: true })
     .click();
 }
 async function nav(page: Page) {
-  const toggle = page.getByRole("button", { name: /^Threads/ });
+  const toggle = page.getByRole("button", { name: /^Clients/ });
   if (await toggle.isVisible()) await toggle.click();
 }
 async function noOverflow(page: Page) {
@@ -176,13 +179,17 @@ test("two independent threads, thread switching, goal editing, rename, archive a
     page.getByText(first.mock_result.send!, { exact: true }),
   ).toHaveCount(0);
   await nav(page);
-  await page.getByRole("link", { name: "Acme website", exact: true }).click();
+  await page
+    .getByRole("link", { name: "Sarah Chen — Acme website", exact: true })
+    .click();
   await expect(page).toHaveURL(new RegExp(id));
   await expect(
     page.getByText(first.mock_result.send!, { exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Thread settings" }).click();
-  await page.getByLabel("Thread name", { exact: true }).fill("Acme revised");
+  await page
+    .getByLabel("What are you working on?", { exact: true })
+    .fill("Acme revised");
   await page
     .getByLabel("Goal", { exact: true })
     .fill("Keep the relationship but decline this project.");
@@ -196,9 +203,11 @@ test("two independent threads, thread switching, goal editing, rename, archive a
   await expect(
     page.getByRole("button", { name: "Reopen thread" }),
   ).toBeVisible();
-  await expect(page.getByLabel("New Reality", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("Client update", { exact: true })).toHaveCount(
+    0,
+  );
   await page.getByRole("button", { name: "Reopen thread" }).click();
-  await expect(page.getByLabel("New Reality", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Client update", { exact: true })).toBeVisible();
   await page.reload();
   await expect(
     page.getByRole("heading", { name: "Acme revised" }),
@@ -273,7 +282,7 @@ for (const [input, expected] of [
       page.getByRole("button", { name: "Retry next move" }),
     ).toBeVisible();
     await expect(
-      page.getByLabel("New Reality", { exact: true }),
+      page.getByLabel("Client update", { exact: true }),
     ).toBeDisabled();
     await page.reload();
     await expect(
@@ -296,7 +305,7 @@ test("retry succeeds without a duplicate turn", async ({ page }) => {
   await expect(
     page.getByText(first.mock_result.send!, { exact: true }),
   ).toBeVisible();
-  await expect(page.getByLabel("New Reality", { exact: true })).toBeEnabled();
+  await expect(page.getByLabel("Client update", { exact: true })).toBeEnabled();
   expect(
     (await (await page.request.get(`/api/threads/${id}`)).json()).turns,
   ).toHaveLength(1);
@@ -370,7 +379,7 @@ test("network error preserves unsaved input and supports retry", async ({
   await expect(page.locator(".error[role=alert]")).toContainText(
     "connection was interrupted",
   );
-  await expect(page.getByLabel("New Reality", { exact: true })).toHaveValue(
+  await expect(page.getByLabel("Client update", { exact: true })).toHaveValue(
     first.conversation,
   );
   await page.unroute("**/api/threads/*/turns");
@@ -461,7 +470,7 @@ test("invalid thread response fails safely and reloads the persisted result", as
   await expect(
     page.getByRole("button", { name: "Copy", exact: true }),
   ).toBeVisible();
-  await expect(page.getByLabel("New Reality", { exact: true })).toBeEnabled();
+  await expect(page.getByLabel("Client update", { exact: true })).toBeEnabled();
 });
 
 test("expired session redirects API-dependent work to signin", async ({
