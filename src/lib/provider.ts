@@ -1,91 +1,127 @@
+import "server-only";
 import { z } from "zod";
-import {
-  FENNLO_SYSTEM,
-  internalNextMoveSchema,
-  nextMoveJsonSchema,
-  type InternalNextMove,
-  type NextMoveInput,
-} from "./formation";
+import { readAIConfig, type AIConfig } from "./config";
+import { AppError } from "./errors";
+import { readBoundedText } from "./bounded-body";
 
-const responseEnvelopeSchema = z
-  .object({
-    status: z.string(),
-    output: z.array(
-      z
-        .object({
-          type: z.string(),
-          content: z
-            .array(
-              z
-                .object({
-                  type: z.string(),
-                  text: z.string().optional(),
-                })
-                .passthrough(),
-            )
-            .optional(),
-        })
-        .passthrough(),
-    ),
-  })
-  .passthrough();
-
-function requiredEnv(name: "OPENAI_API_KEY" | "OPENAI_MODEL") {
-  const value = process.env[name]?.trim();
-  if (!value) throw new Error(`${name} is not configured.`);
-  return value;
+export interface ModelRequest {
+  system: string;
+  data: unknown;
+  schema: Record<string, unknown>;
+}
+export interface AIProvider {
+  generate(request: ModelRequest): Promise<unknown>;
 }
 
-export async function determineNextMove(
-  input: NextMoveInput,
-): Promise<InternalNextMove> {
-  const apiKey = requiredEnv("OPENAI_API_KEY");
-  const model = requiredEnv("OPENAI_MODEL");
-
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      store: false,
-      instructions: FENNLO_SYSTEM,
-      input: JSON.stringify({
-        client_conversation: input.conversation,
-        user_goal: input.goal,
+const envelopeSchema = z.object({
+  choices: z
+    .array(
+      z.object({
+        finish_reason: z.literal("stop"),
+        message: z.object({
+          content: z.string().trim().min(1).max(24_000),
+          refusal: z.string().nullable().optional(),
+          tool_calls: z.array(z.unknown()).max(0).optional(),
+        }),
       }),
-      text: { format: nextMoveJsonSchema },
-      max_output_tokens: 2600,
-    }),
-    signal: AbortSignal.timeout(30000),
-  });
+    )
+    .length(1),
+});
 
-  if (!response.ok) {
-    throw new Error(`AI provider returned ${response.status}.`);
+export class CompatibleProvider implements AIProvider {
+  constructor(
+    private readonly config: AIConfig,
+    private readonly request: typeof fetch = fetch,
+  ) {}
+  async generate(modelRequest: ModelRequest): Promise<unknown> {
+    const c = this.config;
+    const body = JSON.stringify({
+      model: c.AI_MODEL,
+      messages: [
+        {
+          role: "system",
+          content: `${modelRequest.system}\nRequired JSON schema: ${JSON.stringify(modelRequest.schema)}`,
+        },
+        { role: "user", content: JSON.stringify(modelRequest.data) },
+      ],
+      max_tokens: c.AI_MAX_OUTPUT_TOKENS,
+      temperature: 0,
+      ...(c.AI_OUTPUT_MODE === "json_schema"
+        ? {
+            response_format: {
+              type: "json_schema",
+              json_schema: {
+                name: "fennlo_next_move",
+                strict: true,
+                schema: modelRequest.schema,
+              },
+            },
+          }
+        : c.AI_OUTPUT_MODE === "json_object"
+          ? { response_format: { type: "json_object" } }
+          : {}),
+      ...(c.AI_ENABLE_THINKING !== undefined
+        ? { enable_thinking: c.AI_ENABLE_THINKING }
+        : {}),
+    });
+    if (Buffer.byteLength(body) > 180_000) throw new AppError("INVALID_INPUT");
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const deadline = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        controller.abort();
+        reject(new AppError("AI_TIMEOUT"));
+      }, c.AI_TIMEOUT_MS);
+    });
+    const call = async () => {
+      const response = await this.request(
+        `${c.AI_BASE_URL.replace(/\/+$/u, "")}/chat/completions`,
+        {
+          method: "POST",
+          redirect: "error",
+          cache: "no-store",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${c.AI_API_KEY}`,
+          },
+          body,
+          signal: controller.signal,
+        },
+      );
+      if (!response.ok) {
+        void response.body?.cancel().catch(() => undefined);
+        throw new AppError("AI_UNAVAILABLE");
+      }
+      const text = await readBoundedText(
+        response.body,
+        65_536,
+        controller.signal,
+        new AppError("AI_RESPONSE_LIMIT"),
+      );
+      try {
+        const envelope = envelopeSchema.parse(JSON.parse(text));
+        const choice = envelope.choices[0];
+        if (choice.message.refusal) throw new AppError("AI_INVALID_RESPONSE");
+        return JSON.parse(choice.message.content) as unknown;
+      } catch {
+        throw new AppError("AI_INVALID_RESPONSE");
+      }
+    };
+    try {
+      return await Promise.race([call(), deadline]);
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(
+        controller.signal.aborted ? "AI_TIMEOUT" : "AI_UNAVAILABLE",
+      );
+    } finally {
+      clearTimeout(timer);
+      controller.abort();
+    }
   }
+}
 
-  const envelope = responseEnvelopeSchema.parse(await response.json());
-  if (envelope.status !== "completed") {
-    throw new Error("AI provider returned an incomplete response.");
-  }
-
-  const content = envelope.output
-    .filter((item) => item.type === "message")
-    .flatMap((item) => item.content ?? []);
-
-  if (content.some((part) => part.type === "refusal")) {
-    throw new Error("AI provider declined the request.");
-  }
-
-  const text = content
-    .filter((part) => part.type === "output_text")
-    .map((part) => part.text ?? "")
-    .join("")
-    .trim();
-
-  if (!text) throw new Error("AI provider returned no structured output.");
-
-  return internalNextMoveSchema.parse(JSON.parse(text));
+// No other provider, paid fallback, retry, or production mock exists.
+export function createProvider(): AIProvider {
+  return new CompatibleProvider(readAIConfig());
 }

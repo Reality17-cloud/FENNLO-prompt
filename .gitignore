@@ -5,3 +5,10 @@ node_modules
 .env.*.local
 .DS_Store
 npm-debug.log*
+*.tsbuildinfo
+playwright-report/
+test-results/
+coverage/
+work/
+.env.*
+!.env.example
