@@ -67,6 +67,15 @@ const server = createServer(async (req, res) => {
         ...cases[1].mock_result,
         formed: [...data.previous_state.formed, "__continue__"],
       };
+    // A readable continuation for UI review, preserving the earlier fixture facts.
+    if (
+      data.client_conversation === cases[1].conversation &&
+      data.previous_state?.formed?.includes(cases[0].conversation)
+    )
+      result = {
+        ...cases[1].mock_result,
+        formed: [...data.previous_state.formed, cases[1].conversation],
+      };
     if (data.client_conversation.startsWith("__long__"))
       result = {
         ...cases[0].mock_result,

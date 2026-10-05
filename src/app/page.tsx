@@ -1,65 +1,73 @@
 import Link from "next/link";
 import { PublicHeader, PublicFooter } from "@/components/public-shell";
+import { WorkspacePreview } from "@/components/workspace-preview";
+import { Icon } from "@/components/ui";
+
 export default function Home() {
   return (
     <>
       <PublicHeader />
       <main className="landing">
-        <div className="landing-intro">
-          <p className="eyebrow">Client Next Move</p>
-          <h1>
-            Client conversations,
-            <br />
-            one move ahead.
-          </h1>
-          <p className="lead">
-            Paste what your client said. Fennlo determines what should happen
-            next and gives you the message to send.
-          </p>
-          <div className="actions">
-            <Link className="button" href="/signup">
-              Get started <span aria-hidden="true">→</span>
-            </Link>
-            <Link className="text-link" href="/signin">
-              Sign in
-            </Link>
+        <section className="landing-intro">
+          <div>
+            <p className="eyebrow">Client Next Move</p>
+            <h1>
+              Client conversations,
+              <br />
+              one move ahead.
+            </h1>
           </div>
-          <p className="small muted">Free beta</p>
-        </div>
-        <section className="preview" aria-label="Example client thread">
-          <div className="preview-header">
-            <span>Acme website</span>
-            <span className="small muted">Example</span>
-          </div>
-          <p className="preview-goal">
-            Goal: Close the project without discounting.
-          </p>
-          <div className="preview-reality">
-            <span className="eyebrow">Client Reality</span>
-            <p>“The price is a little high.”</p>
-          </div>
-          <div className="preview-result">
-            <span className="eyebrow">Next move</span>
-            <p>Determine what remains unresolved before changing the price.</p>
-            <div className="message-surface">
-              <span className="eyebrow">Message</span>
-              <p>
-                Before we change the price, may I ask what the main concern is
-                right now?
-              </p>
-            </div>
-            <p className="small muted">
-              The actual blocker has not been established.
+          <div className="landing-description">
+            <p className="lead">
+              Keep the goal and current client reality together. Decide what
+              should happen next, as the conversation continues.
             </p>
+            <div className="actions">
+              <Link className="button" href="/signup">
+                Get started <Icon name="arrow" />
+              </Link>
+              <Link className="text-link" href="/signin">
+                Sign in
+              </Link>
+            </div>
           </div>
         </section>
-        <div className="landing-note">
-          <h2>A place to continue the conversation.</h2>
-          <p>
-            Your goal stays with the client thread. Add the next reply or a
-            change in the situation, and work from what has actually happened.
-          </p>
-        </div>
+        <WorkspacePreview />
+        <section className="continuity" aria-labelledby="continuity-title">
+          <div className="continuity-intro">
+            <p className="eyebrow">One thread. A continuing conversation.</p>
+            <h2 id="continuity-title">The conversation continues.</h2>
+            <p className="muted">
+              The goal stays. Each new reply changes what needs to happen next.
+            </p>
+          </div>
+          <div className="continuity-thread">
+            <div className="continuity-goal">
+              <span className="eyebrow">Persistent goal</span>
+              <p>Close the project without discounting.</p>
+            </div>
+            <div className="continuity-step">
+              <span className="continuity-marker" aria-hidden="true" />
+              <div>
+                <span className="small muted">Client reply</span>
+                <p>“The price is a little high.”</p>
+                <span className="continuity-move">
+                  Next move <Icon name="arrow" /> Clarify the concern.
+                </span>
+              </div>
+            </div>
+            <div className="continuity-step">
+              <span className="continuity-marker" aria-hidden="true" />
+              <div>
+                <span className="small muted">New client reply</span>
+                <p>“I just need my manager’s approval.”</p>
+                <span className="continuity-move">
+                  Next move <Icon name="arrow" /> Support internal approval.
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
       <PublicFooter />
     </>

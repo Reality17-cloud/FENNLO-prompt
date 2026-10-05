@@ -27,10 +27,11 @@ export function AuthForm({ signup }: { signup: boolean }) {
       <Link href="/" className="wordmark">
         FENNLO
       </Link>
-      <h1>{signup ? "Create your account" : "Welcome back"}</h1>
+      <p className="eyebrow auth-product">Client Next Move</p>
+      <h1>{signup ? "Create account" : "Sign in"}</h1>
       <p className="muted">
         {signup
-          ? "A workspace for your client conversations."
+          ? "Your client conversations, kept together."
           : "Sign in to your client threads."}
       </p>
       <form onSubmit={submit} className="form-stack">

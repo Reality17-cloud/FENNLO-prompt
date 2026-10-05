@@ -7,7 +7,9 @@ import {
   type ThreadDetail,
   type ThreadTurn,
 } from "@/lib/workspace-schema";
-import { Result } from "./result";
+import { ThreadEntry } from "./thread-entry";
+import { RealityComposer } from "./reality-composer";
+import { Icon, LoadingIndicator } from "./ui";
 export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
   const router = useRouter();
   const [detail, setDetail] = useState(initial);
@@ -17,8 +19,26 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
   const [error, setError] = useState("");
   const [settings, setSettings] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
-  const end = useRef<HTMLDivElement>(null);
+  const [notice, setNotice] = useState("");
+  const timeline = useRef<HTMLElement>(null);
   const t = detail.thread;
+  const latest = detail.turns.at(-1);
+  useEffect(() => {
+    // Keep programmatic scrolling inside the timeline, preserving the mobile shell.
+    const viewport = timeline.current;
+    const turn = viewport?.querySelector(".timeline-turn:last-of-type");
+    const target = turn?.querySelector(".fennlo-turn") ?? turn;
+    if (!viewport || !target) return;
+    viewport.scrollTo({
+      top:
+        viewport.scrollTop +
+        target.getBoundingClientRect().top -
+        viewport.getBoundingClientRect().top,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+    });
+  }, [latest?.id, latest?.status]);
   const base = `/api/threads/${t.id}`;
   const unresolved = detail.turns.find(
     (turn) => turn.status === "FAILED" || turn.status === "PENDING",
@@ -82,7 +102,6 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
       mergeLatest(next);
       if (!turn) setReality("");
       router.refresh();
-      end.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Please try again.");
       try {
@@ -106,6 +125,15 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
       );
       mergeLatest(next);
       setSettings(false);
+      setNotice(
+        values.status === "ARCHIVED"
+          ? "Thread archived."
+          : values.status === "COMPLETED"
+            ? "Thread marked complete."
+            : values.status === "ACTIVE"
+              ? "Thread reopened."
+              : "Changes saved.",
+      );
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Please try again.");
@@ -144,11 +172,13 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
         <div className="thread-title-line">
           <h1>{t.title}</h1>
           <button
-            className="secondary compact"
+            className="secondary compact settings-toggle"
+            aria-controls="thread-settings"
             aria-expanded={settings}
             onClick={() => setSettings(!settings)}
           >
-            Thread settings
+            <Icon name="settings" />
+            <span>Thread settings</span>
           </button>
         </div>
         <div className="goal-line">
@@ -168,7 +198,7 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
           </p>
         )}
         {settings && (
-          <div className="thread-settings">
+          <div className="thread-settings" id="thread-settings">
             <form className="form-stack" onSubmit={saveSettings}>
               <label htmlFor="edit-title">Thread name</label>
               <input
@@ -190,8 +220,8 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
                 disabled={busy || t.processing || Boolean(unresolved)}
               />
               <p className="field-hint">
-                Goal changes are saved as an explicit event. Resolve an
-                unfinished determination before changing the goal.
+                Goal changes stay in the timeline. Finish or retry the current
+                turn before changing the goal.
               </p>
               <div className="actions">
                 <button
@@ -229,8 +259,12 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
             )}
           </div>
         )}
+        <span className="save-notice" role="status">
+          {notice}
+        </span>
       </header>
       <section
+        ref={timeline}
         className="timeline"
         aria-label="Thread timeline"
         aria-busy={busy || t.processing}
@@ -246,7 +280,7 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
         )}
         {detail.turns.length === 0 && (
           <div className="timeline-empty">
-            <h2>Start with what happened.</h2>
+            <h2>What has happened so far?</h2>
             <p>
               Paste the client’s latest reply, a call summary, or a change in
               the situation. Your next move will appear here.
@@ -254,67 +288,20 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
           </div>
         )}
         {detail.turns.map((turn) => (
-          <article key={turn.id} className="timeline-turn">
-            {turn.kind === "GOAL" ? (
-              <div className="goal-event">
-                <span className="eyebrow">Goal updated</span>
-                <p>{turn.reality}</p>
-                <details>
-                  <summary>Previous goal</summary>
-                  <p>{turn.goalAtTurn}</p>
-                </details>
-              </div>
-            ) : (
-              <>
-                <div className="reality-turn">
-                  <div className="turn-meta">
-                    <span className="eyebrow">You · Client Reality</span>
-                    <time dateTime={turn.createdAt}>
-                      {new Date(turn.createdAt).toLocaleDateString("en", {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </time>
-                  </div>
-                  <p>{turn.reality}</p>
-                </div>
-                <div className="fennlo-turn">
-                  <span className="author-label">FENNLO</span>
-                  {turn.result ? (
-                    <Result result={turn.result} />
-                  ) : turn.status === "FAILED" ? (
-                    <div className="turn-failure">
-                      <p>{turn.error}</p>
-                      <p className="small muted">
-                        Your Reality is saved. Retry to continue from the last
-                        verified state.
-                      </p>
-                      {t.status === "ACTIVE" && (
-                        <button
-                          className="secondary compact"
-                          disabled={busy || t.processing}
-                          onClick={() => determine(turn)}
-                        >
-                          Retry next move
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="loading-line" role="status">
-                      Determining the next move…
-                    </p>
-                  )}
-                </div>
-              </>
-            )}
-          </article>
+          <ThreadEntry
+            key={turn.id}
+            turn={turn}
+            active={t.status === "ACTIVE"}
+            disabled={busy || t.processing}
+            onRetry={() => void determine(turn)}
+          />
         ))}
         {generating && (
           <p className="loading-line" role="status">
+            <LoadingIndicator />
             Determining the next move…
           </p>
         )}
-        <div ref={end} />
       </section>
       <div className="composer-region">
         {error && (
@@ -323,40 +310,15 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
           </p>
         )}
         {t.status === "ACTIVE" ? (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void determine();
-            }}
-            className="reality-composer"
-          >
-            <label htmlFor="reality">New Reality</label>
-            <textarea
-              id="reality"
-              value={reality}
-              onChange={(e) => setReality(e.target.value)}
-              placeholder="Paste the client’s latest reply or tell Fennlo what changed…"
-              maxLength={20000}
-              rows={3}
-              disabled={busy || t.processing || Boolean(unresolved)}
-              required
-            />
-            <div className="composer-toolbar">
-              <span className="small muted">
-                {unresolved
-                  ? "Resolve the unfinished turn above to continue."
-                  : "Add what happened. Your goal stays with this thread."}
-              </span>
-              <button
-                className="button"
-                disabled={
-                  busy || t.processing || Boolean(unresolved) || !reality.trim()
-                }
-              >
-                {generating || t.processing ? "Determining…" : "Find next move"}
-              </button>
-            </div>
-          </form>
+          <RealityComposer
+            value={reality}
+            onChange={setReality}
+            onSubmit={() => void determine()}
+            disabled={busy || t.processing || Boolean(unresolved)}
+            loading={generating || t.processing}
+            blocked={Boolean(unresolved)}
+            threadTitle={t.title}
+          />
         ) : (
           <p className="muted small">Reopen this thread to add new Reality.</p>
         )}

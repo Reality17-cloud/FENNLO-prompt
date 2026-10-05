@@ -14,7 +14,7 @@ export default async function Account() {
       </header>
       <main className="account-page">
         <h1>Account</h1>
-        <label>Email</label>
+        <p className="eyebrow">Email</p>
         <p className="account-email">{user.email}</p>
         <AccountControls />
         <p className="small muted">

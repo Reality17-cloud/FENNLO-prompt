@@ -35,10 +35,11 @@ export function NewThread() {
   }
   return (
     <div className="new-thread-page">
-      <p className="eyebrow">Client Next Move</p>
-      <h1>New client thread</h1>
+      <p className="eyebrow">New client thread</p>
+      <h1>Start with a client.</h1>
       <p className="muted">
-        Keep one client situation and its next moves together.
+        Give the conversation a name and a goal. Then add what has happened so
+        far.
       </p>
       <form onSubmit={submit} className="form-stack">
         <label htmlFor="title">

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { PublicNextMove } from "@/lib/schemas";
+import { Icon } from "./ui";
 export function Result({ result }: { result: PublicNextMove }) {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
@@ -25,10 +26,14 @@ export function Result({ result }: { result: PublicNextMove }) {
           <div className="message-heading">
             <span className="eyebrow">Message</span>
             <button className="copy-button secondary compact" onClick={copy}>
+              <Icon name={copied ? "check" : "copy"} />
               {copied ? "Copied" : "Copy"}
             </button>
           </div>
           <p className="client-message">{result.send}</p>
+          <span className="sr-only" role="status">
+            {copied ? "Message copied to clipboard." : ""}
+          </span>
           {copyError && (
             <p className="small muted" role="status">
               Copy is unavailable. Select the message and copy it manually.
