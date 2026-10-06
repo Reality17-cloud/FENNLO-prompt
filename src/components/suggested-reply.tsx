@@ -18,16 +18,16 @@ export function SuggestedReply({ message }: { message: string }) {
   return (
     <div className="message-surface">
       <div className="message-heading">
-        <Icon name="conversation" />
-        <span>Suggested reply</span>
-      </div>
-      <p className="client-message">{message}</p>
-      <div className="message-actions">
+        <span className="message-title">
+          <Icon name="conversation" />
+          Suggested reply
+        </span>
         <button className="copy-button" onClick={copy}>
           <Icon name={copied ? "check" : "copy"} />
           {copied ? "Copied" : "Copy reply"}
         </button>
       </div>
+      <p className="client-message">{message}</p>
       <span className="sr-only" role="status">
         {copied ? "Message copied to clipboard." : ""}
       </span>

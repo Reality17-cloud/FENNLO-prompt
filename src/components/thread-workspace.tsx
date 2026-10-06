@@ -35,10 +35,13 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
         : (turn?.querySelector(".fennlo-turn") ?? turn);
     if (!viewport || !target) return;
     viewport.scrollTo({
-      top:
+      top: Math.max(
+        0,
         viewport.scrollTop +
-        target.getBoundingClientRect().top -
-        viewport.getBoundingClientRect().top,
+          target.getBoundingClientRect().top -
+          viewport.getBoundingClientRect().top -
+          12,
+      ),
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
         ? "auto"
         : "smooth",

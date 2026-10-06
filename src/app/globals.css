@@ -1,20 +1,20 @@
-/* Fennlo: an ink navigation rail, a paper workspace, and sage interaction surfaces. */
+/* Fennlo: charcoal navigation, warm neutral context, and white working surfaces. */
 :root {
-  --canvas: #f5f7f3;
+  --canvas: #f5f4f1;
   --surface: #ffffff;
-  --bg: #f4f5f0;
-  --text: #202b25;
-  --muted: #6b766e;
-  --line: #e0e5dd;
-  --border: #d2dad1;
-  --accent: #346a52;
-  --accent-soft: #eaf2e9;
+  --bg: #f6f5f2;
+  --text: #242320;
+  --muted: #6b6862;
+  --line: #e4e1db;
+  --border: #d5d1c9;
+  --accent: #2b2a28;
+  --accent-soft: #efede8;
   --error: #a13d3a;
-  --nav: #222f29;
-  --nav-text: #eff3ed;
-  --nav-muted: #acbbb0;
-  --nav-hover: #2e3d34;
-  --nav-selected: #3b4d40;
+  --nav: #282827;
+  --nav-text: #f6f5f2;
+  --nav-muted: #b9b7b1;
+  --nav-hover: #353533;
+  --nav-selected: #44433f;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -22,7 +22,7 @@
   --space-6: 24px;
   --space-8: 32px;
   --space-12: 48px;
-  --shadow-soft: 0 2px 6px #213d2810, 0 12px 32px #213d2805;
+  --shadow-soft: 0 2px 6px #24231f10, 0 12px 32px #24231f05;
 }
 * {
   box-sizing: border-box;
@@ -77,7 +77,7 @@ summary:focus-visible {
 }
 input:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #346a5233;
+  outline: 2px solid #2b2a2833;
   outline-offset: 2px;
   border-color: var(--accent);
 }
@@ -102,7 +102,7 @@ input,
 textarea {
   width: 100%;
   min-width: 0;
-  background: #fcfdfb;
+  background: #fdfdfc;
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px 14px;
@@ -121,14 +121,14 @@ textarea {
 }
 input:hover:not(:disabled),
 textarea:hover:not(:disabled) {
-  border-color: #a9b9ab;
+  border-color: #aaa69d;
 }
 input:disabled,
 textarea:disabled {
-  background: #eef1ea;
+  background: #eeede9;
 }
 ::placeholder {
-  color: #69776a;
+  color: #726e66;
   opacity: 1;
 }
 label {
@@ -158,11 +158,11 @@ label {
 .button {
   background: var(--accent);
   color: #fff;
-  box-shadow: 0 1px 2px #153d251a;
+  box-shadow: 0 1px 2px #24231f1a;
 }
 .button:hover:not(:disabled) {
-  background: #275840;
-  box-shadow: 0 2px 5px #153d2526;
+  background: #41403b;
+  box-shadow: 0 2px 5px #24231f26;
 }
 .secondary {
   background: var(--surface);
@@ -170,8 +170,8 @@ label {
   color: var(--text);
 }
 .secondary:hover:not(:disabled) {
-  background: #f0f4ec;
-  border-color: #b2c2b3;
+  background: #f2f0eb;
+  border-color: #bdb8ae;
 }
 .compact {
   min-height: 36px;
@@ -205,7 +205,7 @@ label {
   color: var(--muted);
 }
 .icon-button:hover {
-  background: #e9eee6;
+  background: #efede8;
   color: var(--text);
 }
 .muted {
@@ -343,7 +343,7 @@ label {
 }
 .public-header .secondary {
   background: transparent;
-  border-color: #cbd6c9;
+  border-color: #d5d1c9;
 }
 .public-footer {
   padding: 26px 0;
@@ -401,11 +401,11 @@ label {
 .conversation-example {
   min-width: 0;
   background: var(--surface);
-  border: 1px solid #dbe3d7;
+  border: 1px solid #e0ddd6;
   border-radius: 14px;
   box-shadow:
-    0 4px 8px #223e2410,
-    0 20px 60px #223e2410;
+    0 4px 8px #24231f10,
+    0 20px 60px #24231f10;
   overflow: hidden;
 }
 .example-header {
@@ -414,7 +414,7 @@ label {
   justify-content: space-between;
   gap: 16px;
   padding: 24px 28px;
-  background: #fbfcf8;
+  background: #faf9f6;
   border-bottom: 1px solid var(--line);
 }
 .example-identity {
@@ -436,7 +436,7 @@ label {
 .example-caption {
   font-size: 11px;
   color: var(--muted);
-  background: #eef2e9;
+  background: #efede8;
   padding: 4px 8px;
   border-radius: 5px;
   white-space: nowrap;
@@ -453,7 +453,7 @@ label {
   gap: 64px;
   padding: 44px 0 0;
   margin-top: 48px;
-  border-top: 1px solid #dce3d7;
+  border-top: 1px solid #e4e1db;
   align-items: start;
 }
 .continuity h2 {
@@ -509,28 +509,28 @@ label {
 .sidebar a:focus-visible,
 .sidebar summary:focus-visible,
 .thread-drawer button:focus-visible {
-  outline-color: #b1d2b7;
+  outline-color: #dedbd3;
 }
 .sidebar .new-thread {
   width: 100%;
   justify-content: flex-start;
   gap: 10px;
-  border-color: #4f6254;
-  background: #334539;
-  color: #eff5ec;
+  border-color: #595853;
+  background: #3a3a37;
+  color: #f6f5f2;
   box-shadow: 0 1px 2px #00000010;
   font-size: 13px;
 }
 .sidebar .new-thread:hover {
-  background: #405643;
-  border-color: #6b826c;
+  background: #484742;
+  border-color: #79766e;
 }
 .sidebar nav {
   flex: 1;
   min-height: 0;
   overflow: auto;
   scrollbar-width: thin;
-  scrollbar-color: #576a5c transparent;
+  scrollbar-color: #65635d transparent;
   padding-top: 28px;
 }
 .nav-label {
@@ -567,7 +567,7 @@ label {
 }
 .sidebar nav a[aria-current="page"] {
   background: var(--nav-selected);
-  box-shadow: inset 0 0 0 1px #7c927b38;
+  box-shadow: inset 0 0 0 1px #c6c2b638;
 }
 .sidebar nav a[aria-current="page"]::before {
   content: "";
@@ -575,7 +575,7 @@ label {
   inset: 16px auto 16px 0;
   width: 3px;
   border-radius: 0 3px 3px 0;
-  background: #bfd4ae;
+  background: #dedbd3;
 }
 .nav-client {
   display: flex;
@@ -593,12 +593,12 @@ label {
 .nav-client .nav-project {
   font-size: 12px;
   font-weight: 430;
-  color: #bac7bb;
+  color: #c7c4bd;
   margin-top: 3px;
 }
 .nav-history {
   margin-top: 26px;
-  color: #c6d0c6;
+  color: #d0cdc5;
 }
 .nav-history > summary {
   font-size: 12px;
@@ -632,7 +632,7 @@ label {
   flex: none;
   padding: 14px 0 0;
   margin-top: 16px;
-  border-top: 1px solid #425044;
+  border-top: 1px solid #484742;
 }
 .sidebar-account {
   display: flex;
@@ -652,9 +652,9 @@ label {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #58675a;
+  border: 1px solid #65625b;
   border-radius: 50%;
-  color: #c5d1c4;
+  color: #d0cdc5;
 }
 .sidebar-account > span:last-child {
   min-width: 0;
@@ -693,10 +693,10 @@ label {
   min-height: 0;
   background: var(--canvas);
   margin: 8px 8px 8px 0;
-  border: 1px solid #dfe6db;
+  border: 1px solid #e4e1db;
   border-radius: 12px;
   overflow: auto;
-  box-shadow: 0 1px 3px #12211c16;
+  box-shadow: 0 1px 3px #24231f16;
 }
 .mobile-thread-toggle {
   display: none;
@@ -711,11 +711,11 @@ label {
   max-height: none;
   background: var(--nav);
   color: var(--nav-text);
-  box-shadow: 16px 0 48px #101f2933;
+  box-shadow: 16px 0 48px #24231f33;
 }
 .thread-drawer::backdrop,
 .modal::backdrop {
-  background: #182d254d;
+  background: #24231f4d;
 }
 .drawer-content {
   display: flex;
@@ -775,19 +775,20 @@ label {
   flex: 1;
 }
 .thread-client-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #56675b;
+  font-size: 20px;
+  font-weight: 620;
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .thread-context h1 {
-  font-size: 22px;
-  font-weight: 620;
+  font-size: 15px;
+  font-weight: 540;
+  color: var(--muted);
   line-height: 1.35;
-  letter-spacing: -0.65px;
-  margin-top: 2px;
+  letter-spacing: -0.1px;
+  margin-top: 3px;
   overflow-wrap: anywhere;
   max-height: 62px;
   overflow: auto;
@@ -814,8 +815,8 @@ label {
   border: 1px solid var(--line);
   border-radius: 10px;
   box-shadow:
-    0 4px 12px #1b332b14,
-    0 16px 40px #1b332b1a;
+    0 4px 12px #24231f14,
+    0 16px 40px #24231f1a;
   z-index: 10;
 }
 .client-menu-popover button {
@@ -832,7 +833,7 @@ label {
 }
 .client-menu-popover button:hover:not(:disabled),
 .client-menu-popover button:focus-visible {
-  background: #edf4e9;
+  background: #f2f0eb;
 }
 .client-menu-popover .icon {
   color: var(--muted);
@@ -866,11 +867,11 @@ label {
 .modal {
   width: min(460px, calc(100% - 32px));
   padding: 24px;
-  border: 1px solid #d5dfd1;
+  border: 1px solid #ddd9d0;
   border-radius: 14px;
   color: var(--text);
   background: var(--surface);
-  box-shadow: 0 20px 70px #10251b26;
+  box-shadow: 0 20px 70px #24231f26;
   max-height: calc(100dvh - 40px);
   overflow: auto;
 }
@@ -909,12 +910,13 @@ label {
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: #c7d2c1 transparent;
-  padding: 28px 36px 24px;
+  scrollbar-color: #cfcbc2 transparent;
+  padding: 0 36px;
 }
 .timeline-content {
   max-width: 760px;
   margin: auto;
+  padding-block: 28px 24px;
 }
 .timeline-turn {
   margin-bottom: 32px;
@@ -934,7 +936,7 @@ label {
   font-weight: 650;
   background: #e2e9df;
   color: #445340;
-  box-shadow: inset 0 0 0 1px #273f2710;
+  box-shadow: inset 0 0 0 1px #24231f10;
 }
 .client-avatar.avatar-small {
   width: 32px;
@@ -996,7 +998,7 @@ label {
 .event-heading time {
   font-size: 12px;
   font-weight: 430;
-  color: #697664;
+  color: #6b6862;
   flex: none;
 }
 .client-event-body > p {
@@ -1017,7 +1019,7 @@ label {
   margin-bottom: 8px;
   font-size: 12px;
   font-weight: 580;
-  color: #526d58;
+  color: #625f58;
 }
 .fennlo-identity > span:first-child {
   width: 19px;
@@ -1025,8 +1027,8 @@ label {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #d0dfc9;
-  background: #e9f1e5;
+  border: 1px solid #ddd9d0;
+  background: #efede8;
   border-radius: 5px;
   color: var(--accent);
 }
@@ -1053,61 +1055,66 @@ label {
 }
 .message-surface {
   min-width: 0;
-  background: #fcfef9;
-  border: 1px solid #d5e1cb;
+  background: #ffffff;
+  border: 1px solid #d5d1c9;
   border-radius: 10px;
   box-shadow:
-    0 2px 4px #2d48230a,
+    0 2px 4px #24231f0a,
     0 1px 0 #ffffff inset;
-  overflow: hidden;
+  overflow: clip;
   transition:
     border-color 140ms,
     box-shadow 140ms;
 }
 .message-surface:hover {
-  border-color: #b9ccad;
-  box-shadow: 0 3px 8px #2d48230d;
+  border-color: #bdb8ae;
+  box-shadow: 0 3px 8px #24231f0d;
 }
 .message-heading {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   display: flex;
   align-items: center;
-  gap: 7px;
+  justify-content: space-between;
+  gap: 12px;
   font-size: 12px;
   font-weight: 580;
-  color: #55704e;
-  padding: 13px 16px 0;
+  color: #5f5c56;
+  padding: 8px 12px 8px 16px;
+  background: #f7f6f2;
+  border-bottom: 1px solid var(--line);
+}
+.message-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
 }
 .message-heading .icon {
   width: 14px;
   height: 14px;
 }
 .client-message {
-  padding: 8px 16px 14px;
+  padding: 14px 16px 16px;
   font-size: 16px;
   font-weight: 440;
   line-height: 1.7;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.message-actions {
-  display: flex;
-  justify-content: flex-end;
-  padding: 7px 12px;
-  border-top: 1px solid #e4ecdd;
-  background: #f2f7ed;
-}
 .copy-button {
+  flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
   min-width: 112px;
-  min-height: 34px;
+  min-height: 36px;
   padding: 6px 11px;
-  border: 1px solid #c5d6ba;
+  border: 1px solid #d5d1c9;
   border-radius: 7px;
   background: #fff;
-  color: #3d6140;
+  color: #36342f;
   font-size: 12px;
   font-weight: 560;
   transition:
@@ -1116,9 +1123,9 @@ label {
     box-shadow 120ms;
 }
 .copy-button:hover {
-  background: #e7f0df;
-  border-color: #9bb88c;
-  box-shadow: 0 1px 2px #2d482314;
+  background: #eeece6;
+  border-color: #aaa69d;
+  box-shadow: 0 1px 2px #24231f14;
 }
 .copy-error {
   padding: 12px 16px;
@@ -1177,7 +1184,7 @@ label {
 .turn-failure {
   border-left: 2px solid #dfc7b8;
   padding-left: 14px;
-  color: #5f695e;
+  color: #625f58;
 }
 .turn-failure p {
   font-size: 14px;
@@ -1189,7 +1196,7 @@ label {
 }
 .goal-event {
   margin-left: 48px;
-  border-left: 2px solid #bfcdb6;
+  border-left: 2px solid #cbc6bb;
   padding-left: 16px;
   color: var(--muted);
   font-size: 13px;
@@ -1243,23 +1250,23 @@ label {
 .reality-composer {
   padding: 12px 12px 10px;
   background: var(--surface);
-  border: 1px solid #d4ddd0;
+  border: 1px solid #d5d1c9;
   border-radius: 12px;
   box-shadow:
-    0 2px 4px #29422208,
-    0 8px 24px #29422208;
+    0 2px 4px #24231f08,
+    0 8px 24px #24231f08;
   transition:
     border-color 140ms,
     box-shadow 140ms;
 }
 .reality-composer:focus-within {
-  border-color: #759970;
+  border-color: #858077;
   box-shadow:
-    0 0 0 3px #346a5210,
-    0 4px 16px #2942220d;
+    0 0 0 3px #2b2a2810,
+    0 4px 16px #24231f0d;
 }
 .reality-composer[aria-busy="true"] {
-  background: #f9fbf5;
+  background: #faf9f6;
 }
 .reality-composer textarea {
   display: block;
@@ -1293,7 +1300,7 @@ label {
 }
 .keyboard-hint {
   font-size: 11px;
-  color: #6b766e;
+  color: #6b6862;
   padding-left: 4px;
 }
 .composer-toolbar > .button {
@@ -1317,19 +1324,19 @@ label {
   justify-content: center;
   width: 64px;
   height: 64px;
-  border: 1px solid #d1dfc8;
-  background: #e6efdf;
+  border: 1px solid #ddd9d0;
+  background: #efede8;
   border-radius: 17px;
   color: var(--accent);
   margin: 0 auto 26px;
-  box-shadow: 0 2px 4px #2d482308;
+  box-shadow: 0 2px 4px #24231f08;
 }
 .welcome-symbol .icon {
   width: 28px;
   height: 28px;
 }
 .workspace-welcome .workspace-caption {
-  color: #607457;
+  color: #625f58;
   margin-bottom: 12px;
   font-size: 13px;
 }
@@ -1389,14 +1396,14 @@ label {
   min-height: 100dvh;
   display: grid;
   grid-template-columns: minmax(300px, 0.78fr) 1.22fr;
-  background: #fafbf7;
+  background: #faf9f6;
 }
 .auth-aside {
   display: flex;
   flex-direction: column;
   padding: 48px;
-  background: #dfe8da;
-  border-right: 1px solid #d3dfcd;
+  background: #eae7df;
+  border-right: 1px solid #ddd9d0;
 }
 .auth-aside .wordmark {
   width: fit-content;
@@ -1409,7 +1416,7 @@ label {
 .auth-context > span {
   font-size: 13px;
   font-weight: 550;
-  color: #627b5b;
+  color: #625f58;
 }
 .auth-context h2 {
   font-size: 32px;
@@ -1421,12 +1428,12 @@ label {
 .auth-context p {
   font-size: 15px;
   line-height: 1.75;
-  color: #63745d;
+  color: #625f58;
 }
 .auth-aside nav {
   display: flex;
   gap: 22px;
-  color: #607456;
+  color: #625f58;
   font-size: 12px;
 }
 .auth-aside nav a {
@@ -1612,18 +1619,18 @@ label {
     top: 4px;
     height: 44px;
     padding: 0 12px;
-    background: #35493b;
-    border: 1px solid #4b6250;
+    background: #3a3a37;
+    border: 1px solid #595853;
     border-radius: 8px;
-    color: #f1f5ed;
+    color: #f6f5f2;
     font-size: 12px;
     z-index: 2;
   }
   .mobile-thread-toggle:focus-visible {
-    outline-color: #bfd4ae;
+    outline-color: #dedbd3;
   }
   .mobile-thread-toggle:hover {
-    background: #425843;
+    background: #484742;
   }
   .thread-main {
     margin: 0;
@@ -1805,13 +1812,13 @@ label {
     gap: 12px;
   }
   .thread-context h1 {
-    font-size: 20px;
-    font-weight: 620;
+    font-size: 14px;
+    font-weight: 540;
     max-height: 54px;
     line-height: 1.35;
   }
   .thread-client-name {
-    font-size: 14px;
+    font-size: 18px;
   }
   .thread-goal {
     font-size: 13px;
@@ -1843,7 +1850,10 @@ label {
     padding-left: 50px;
   }
   .timeline {
-    padding: 22px 16px 18px;
+    padding: 0 16px;
+  }
+  .timeline-content {
+    padding-block: 22px 18px;
   }
   .client-event {
     gap: 10px;
@@ -1861,7 +1871,7 @@ label {
   }
   .client-event-heading time,
   .event-time {
-    font-size: 11px;
+    font-size: 12px;
   }
   .client-event-body > p {
     font-size: 15px;
@@ -1888,20 +1898,18 @@ label {
     margin: 3px 0 12px;
   }
   .message-heading {
-    padding: 11px 12px 0;
+    padding: 6px 8px 6px 12px;
+    gap: 8px;
     font-size: 11px;
   }
   .client-message {
-    padding: 7px 12px 12px;
+    padding: 12px;
     font-size: 15px;
     line-height: 1.65;
   }
-  .message-actions {
-    padding: 4px 8px;
-  }
   .copy-button {
-    min-height: 40px;
-    min-width: 114px;
+    min-height: 44px;
+    min-width: 108px;
     font-size: 12px;
   }
   .why {
@@ -1950,7 +1958,7 @@ label {
     max-width: 140px;
   }
   .composer-toolbar > .button {
-    min-height: 42px;
+    min-height: 44px;
     min-width: 148px;
     font-size: 12px;
   }
@@ -2002,9 +2010,9 @@ label {
   }
   .auth-aside {
     padding: 28px 24px 22px;
-    background: #e4eddf;
+    background: #eae7df;
     border: 0;
-    border-bottom: 1px solid #d5e0ce;
+    border-bottom: 1px solid #ddd9d0;
   }
   .auth-context {
     padding: 0;
@@ -2123,10 +2131,10 @@ label {
     max-height: 22px;
   }
   .thread-context h1 {
-    font-size: 18px;
+    font-size: 14px;
     max-height: 26px;
   }
-  .timeline {
+  .timeline-content {
     padding-top: 14px;
   }
   .reality-composer textarea {

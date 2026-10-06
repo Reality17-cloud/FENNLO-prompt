@@ -35,9 +35,7 @@ async function screenshot(page: Page, info: TestInfo, name: string) {
     ),
   ).toBe(true);
   await page.screenshot({
-    path: resolve(
-      `../fennlo-frontend-redesign/${name}-${info.project.name}.png`,
-    ),
+    path: resolve(`../fennlo-product-review/${name}-${info.project.name}.png`),
     fullPage: true,
     scale: "css",
   });
@@ -176,8 +174,24 @@ test("long client update and suggested reply remain readable and copyable", asyn
       el.getBoundingClientRect().top - viewport.getBoundingClientRect().top;
   });
   await screenshot(page, info, "long-suggested-reply");
+  const copy = page.getByRole("button", {
+    name: "Copy reply",
+    exact: true,
+  });
+  await expect(copy).toBeInViewport({ ratio: 1 });
+  // Copy must remain reachable while reading, without jumping to the end.
+  await page.locator(".timeline").evaluate((el) => {
+    el.scrollTop += 240;
+  });
+  await expect(copy).toBeInViewport({ ratio: 1 });
+  const edge = await page.locator(".message-heading").evaluate((el) => ({
+    toolbar: el.getBoundingClientRect().top,
+    timeline: el.closest(".timeline")!.getBoundingClientRect().top,
+  }));
+  expect(Math.abs(edge.toolbar - edge.timeline)).toBeLessThan(1);
+  await screenshot(page, info, "long-reply-reading");
   await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
-  await page.getByRole("button", { name: "Copy reply", exact: true }).click();
+  await copy.click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
     "Thank you for sharing the context. ".repeat(68).trim(),
   );

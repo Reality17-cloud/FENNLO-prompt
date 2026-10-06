@@ -42,9 +42,7 @@ async function capture(page: Page, info: TestInfo, name: string) {
   await page.evaluate(() => document.fonts.ready);
   await noOverflow(page);
   await page.screenshot({
-    path: resolve(
-      `../fennlo-frontend-redesign/${name}-${info.project.name}.png`,
-    ),
+    path: resolve(`../fennlo-product-review/${name}-${info.project.name}.png`),
     fullPage: true,
     scale: "css",
   });
