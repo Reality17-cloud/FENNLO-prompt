@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { ClientThread } from "@/lib/workspace-schema";
 import { Icon } from "./ui";
 import { ClientAvatar } from "./client-identity";
@@ -125,19 +125,13 @@ export function ThreadNav({
   function close() {
     drawer.current?.close();
   }
-  useEffect(() => {
-    const query = window.matchMedia("(min-width: 901px)");
-    const resize = () => {
-      if (query.matches) drawer.current?.close();
-    };
-    query.addEventListener("change", resize);
-    return () => query.removeEventListener("change", resize);
-  }, []);
   return (
     <>
       <button
         ref={toggle}
-        className="mobile-thread-toggle"
+        className="client-switcher-toggle"
+        aria-label="Clients"
+        aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls="thread-drawer"
         onClick={() => {
@@ -145,22 +139,19 @@ export function ThreadNav({
           setOpen(true);
         }}
       >
-        <Icon name="panel" />
-        Clients
+        <span>
+          {clientDisplayName(
+            threads.find((t) => path === `/app/${t.id}`)?.clientName,
+          ) === "Client" && path === "/app"
+            ? "Clients"
+            : clientDisplayName(
+                threads.find((t) => path === `/app/${t.id}`)?.clientName,
+              )}
+        </span>
+        <span className="chevron" aria-hidden="true">
+          ⌄
+        </span>
       </button>
-      <aside className="sidebar desktop-sidebar">
-        <div className="sidebar-brand">
-          <Link href="/app" className="wordmark">
-            FENNLO
-          </Link>
-          <span>Client Next Move</span>
-        </div>
-        <NavigationContents
-          threads={threads}
-          path={path}
-          accountEmail={accountEmail}
-        />
-      </aside>
       <dialog
         id="thread-drawer"
         ref={drawer}
@@ -188,12 +179,20 @@ export function ThreadNav({
           toggle.current?.focus();
         }}
         onClick={(e) => {
-          if (e.target === e.currentTarget) close();
+          const box = e.currentTarget.getBoundingClientRect();
+          if (
+            e.target === e.currentTarget &&
+            (e.clientX < box.left ||
+              e.clientX > box.right ||
+              e.clientY < box.top ||
+              e.clientY > box.bottom)
+          )
+            close();
         }}
       >
         <div className="drawer-content">
           <div className="drawer-header">
-            <span className="wordmark">FENNLO</span>
+            <h2>Clients</h2>
             <button
               className="icon-button"
               aria-label="Close client navigation"
@@ -203,7 +202,7 @@ export function ThreadNav({
               <Icon name="close" />
             </button>
           </div>
-          <div className="sidebar">
+          <div className="client-list">
             <NavigationContents
               threads={threads}
               path={path}

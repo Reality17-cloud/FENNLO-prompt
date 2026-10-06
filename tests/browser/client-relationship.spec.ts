@@ -20,28 +20,41 @@ async function create(page: Page, clientName = "Sarah Chen") {
   await page.goto("/app");
   await page.getByRole("button", { name: "New client", exact: true }).click();
   await page.getByLabel("Client name", { exact: true }).fill(clientName);
-  await page
-    .getByLabel("What are you working on?", { exact: false })
-    .fill("Acme Website");
-  await page.getByLabel("What are you trying to achieve?").fill(first.goal);
+  await page.getByLabel("Project", { exact: false }).fill("Acme Website");
+  await page.getByLabel("Goal").fill(first.goal);
   await page.getByRole("button", { name: "Start conversation" }).click();
   await expect(page).toHaveURL(/\/app\/[a-f0-9-]+$/);
 }
 async function screenshot(page: Page, info: TestInfo, name: string) {
-  await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await Promise.all(
+      document
+        .getAnimations()
+        .filter(
+          (animation) => animation.effect?.getTiming().iterations !== Infinity,
+        )
+        .map((animation) => animation.finished.catch(() => {})),
+    );
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+  });
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+  // Allow the compositor to paint settled fonts before the review capture.
+  await page.waitForTimeout(250);
   await page.screenshot({
-    path: resolve(`../fennlo-product-review/${name}-${info.project.name}.png`),
+    path: resolve(`../fennlo-final-review/${name}-${info.project.name}.png`),
     fullPage: true,
     scale: "css",
   });
 }
 
-test("empty account, named creation, sidebar, timestamp and explicit client rename", async ({
+test("empty account, named creation, client switcher, timestamp and explicit client rename", async ({
   page,
 }) => {
   await signup(page);
@@ -66,22 +79,20 @@ test("empty account, named creation, sidebar, timestamp and explicit client rena
   const input = page.getByLabel("Client update", { exact: true });
   await expect(input).toHaveAttribute(
     "placeholder",
-    "Paste Sarah’s latest reply or tell Fennlo what changed…",
+    "What changed with Sarah?",
   );
   await input.fill(first.conversation);
   await page
     .getByRole("button", { name: "Find next move", exact: true })
     .click();
-  await expect(page.locator(".client-event .client-name")).toHaveText(
-    "Sarah Chen",
-  );
-  await expect(page.locator(".client-event .client-avatar")).toHaveText("SC");
+  await expect(page.locator(".event-heading")).toContainText("Latest update");
+  await expect(page.locator(".latest-update .client-avatar")).toHaveCount(0);
   const before = await (await page.request.get(`/api/threads/${id}`)).json();
-  await expect(page.locator(".client-event time")).toHaveAttribute(
+  await expect(page.locator(".latest-update time")).toHaveAttribute(
     "datetime",
     before.turns[0].createdAt,
   );
-  await expect(page.locator(".client-event time")).toHaveText(
+  await expect(page.locator(".latest-update time")).toHaveText(
     /\d{1,2}:\d{2} [AP]M/,
   );
   await expect(
@@ -101,7 +112,7 @@ test("empty account, named creation, sidebar, timestamp and explicit client rena
   );
   await expect(input).toHaveAttribute(
     "placeholder",
-    "Paste Daniel’s latest reply or tell Fennlo what changed…",
+    "What changed with Daniel?",
   );
   await page.reload();
   const after = await (await page.request.get(`/api/threads/${id}`)).json();
@@ -133,10 +144,7 @@ test("existing unnamed thread has a safe fallback and can gain a real client nam
   await expect(page.locator(".thread-identity .client-avatar")).toHaveText("C");
   await expect(
     page.getByLabel("Client update", { exact: true }),
-  ).toHaveAttribute(
-    "placeholder",
-    "Paste the client’s latest reply or tell Fennlo what changed…",
-  );
+  ).toHaveAttribute("placeholder", "What changed with the client?");
   await page.getByRole("button", { name: "Client options" }).click();
   await page.getByRole("menuitem", { name: "Edit client name" }).click();
   await page.getByLabel("Client name", { exact: true }).fill("Melissa");
@@ -163,7 +171,7 @@ test("long client update and suggested reply remain readable and copyable", asyn
   await expect(
     page.getByRole("button", { name: "Copy reply", exact: true }),
   ).toBeVisible();
-  await page.locator(".client-event").evaluate((el) => {
+  await page.locator(".latest-update").evaluate((el) => {
     const viewport = el.closest(".timeline")!;
     viewport.scrollTop = 0;
   });

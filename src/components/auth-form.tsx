@@ -24,24 +24,11 @@ export function AuthForm({ signup }: { signup: boolean }) {
   }
   return (
     <main className="auth-layout">
-      <aside className="auth-aside">
+      <header className="public-header">
         <Link href="/" className="wordmark">
           FENNLO
         </Link>
-        <div className="auth-context">
-          <span>Client Next Move</span>
-          <h2>A place for your client conversations.</h2>
-          <p>
-            Keep the goal in view.
-            <br />
-            Take the next move back to your client.
-          </p>
-        </div>
-        <nav aria-label="Legal">
-          <Link href="/privacy">Privacy</Link>
-          <Link href="/terms">Terms</Link>
-        </nav>
-      </aside>
+      </header>
       <div className="auth-main">
         <div className="auth-page">
           <h1>{signup ? "Create account" : "Sign in"}</h1>

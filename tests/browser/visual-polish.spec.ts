@@ -18,10 +18,8 @@ async function createThread(page: Page, title = "Acme Website") {
   await page.goto("/app");
   await page.getByRole("button", { name: "New client", exact: true }).click();
   await page.getByLabel("Client name", { exact: true }).fill("Sarah Chen");
-  await page
-    .getByLabel("What are you working on?", { exact: false })
-    .fill(title);
-  await page.getByLabel("What are you trying to achieve?").fill(first.goal);
+  await page.getByLabel("Project", { exact: false }).fill(title);
+  await page.getByLabel("Goal").fill(first.goal);
   await page.getByRole("button", { name: "Start conversation" }).click();
   await expect(
     page.getByRole("heading", { name: title, exact: true }),
@@ -39,10 +37,25 @@ async function noOverflow(page: Page) {
   ).toBe(true);
 }
 async function capture(page: Page, info: TestInfo, name: string) {
-  await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await Promise.all(
+      document
+        .getAnimations()
+        .filter(
+          (animation) => animation.effect?.getTiming().iterations !== Infinity,
+        )
+        .map((animation) => animation.finished.catch(() => {})),
+    );
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+  });
   await noOverflow(page);
+  // Allow the compositor to paint settled fonts before the review capture.
+  await page.waitForTimeout(250);
   await page.screenshot({
-    path: resolve(`../fennlo-product-review/${name}-${info.project.name}.png`),
+    path: resolve(`../fennlo-final-review/${name}-${info.project.name}.png`),
     fullPage: true,
     scale: "css",
   });
@@ -55,18 +68,20 @@ test("one fictional client interaction and all landing CTAs lead to signup", asy
   const preview = page.getByRole("region", { name: "Example client thread" });
   await expect(preview.getByText("Fictional example")).toBeVisible();
   await expect(
-    preview.getByText("The price is a little high.", { exact: true }),
+    preview.getByText("I like it, but I need approval from my manager first.", {
+      exact: true,
+    }),
   ).toBeVisible();
-  await expect(preview.locator(".client-event")).toHaveCount(1);
+  await expect(preview.locator(".latest-update")).toHaveCount(1);
   await expect(preview.locator(".formation-result")).toHaveCount(1);
   await expect(preview.locator("nav, textarea")).toHaveCount(0);
   await expect(
-    preview.locator(".client-event").getByText("Sarah Chen", { exact: true }),
+    preview.locator(".example-header").getByText("Sarah Chen", { exact: true }),
   ).toBeVisible();
-  await expect(preview.getByText("10:42 AM", { exact: true })).toBeVisible();
-  await page
-    .getByRole("link", { name: "Start with your first client" })
-    .click();
+  await expect(
+    preview.getByText("Latest update · 2:18 PM", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Get started" }).last().click();
   await expect(page).toHaveURL(/\/signup$/);
   await page.goto("/");
   const links = page.getByRole("link", { name: "Get started" });
@@ -102,7 +117,7 @@ test("composer preserves Enter, expands for multiline input, and submits explici
   await input.press("End");
   await input.press("Enter");
   await expect(input).toHaveValue(`${first.conversation}\n`);
-  await expect(page.locator(".timeline-turn")).toHaveCount(0);
+  await expect(page.locator(".current-moment")).toHaveCount(0);
   const before = (await input.boundingBox())!.height;
   await input.fill(
     Array.from({ length: 8 }, (_, i) => `Client context line ${i + 1}`).join(
@@ -129,7 +144,7 @@ test("composer preserves Enter, expands for multiline input, and submits explici
   await noOverflow(page);
 });
 
-test("mobile drawer traps focus, Escape restores focus, and selected thread is clear", async ({
+test("client switcher traps focus, Escape restores focus, and selected thread is clear", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -183,7 +198,7 @@ test("rendered states for desktop and mobile visual review", async ({
   await expect(
     page.getByRole("heading", { name: "Start with a client." }),
   ).toBeVisible();
-  await expect(page.locator(".timeline-turn")).toHaveCount(0);
+  await expect(page.locator(".current-moment")).toHaveCount(0);
   await capture(page, info, "empty-account");
   for (const [clientName, title] of [
     ["Daniel Tan", "Brand redesign"],
@@ -213,13 +228,17 @@ test("rendered states for desktop and mobile visual review", async ({
   await expect(
     page.getByText(first.mock_result.send!, { exact: true }),
   ).toBeVisible();
+  await page.locator(".next-operation").scrollIntoViewIfNeeded();
   await expect(
-    page.locator(".timeline-turn").last().locator(".next-operation"),
+    page.locator(".current-moment").last().locator(".next-operation"),
   ).toBeInViewport({ ratio: 1 });
   await capture(page, info, "one-result");
-  await expect(
-    page.locator(".client-event .client-name").last(),
-  ).toBeInViewport({ ratio: 1 });
+  await expect(page.locator(".thread-client-name")).toBeInViewport({
+    ratio: 1,
+  });
+  await page
+    .getByRole("button", { name: "Copy reply", exact: true })
+    .scrollIntoViewIfNeeded();
   await expect(
     page.getByRole("button", { name: "Copy reply", exact: true }).last(),
   ).toBeInViewport({ ratio: 1 });
@@ -232,17 +251,21 @@ test("rendered states for desktop and mobile visual review", async ({
   await expect(
     page.getByText(second.mock_result.send!, { exact: true }),
   ).toBeVisible();
+  await page.locator(".next-operation").scrollIntoViewIfNeeded();
   await expect(
-    page.locator(".timeline-turn").last().locator(".next-operation"),
+    page.locator(".current-moment").last().locator(".next-operation"),
   ).toBeInViewport({ ratio: 1 });
   await expect(page.locator(".thread-header")).toBeInViewport({ ratio: 1 });
   await expect(
     page.getByRole("heading", { name: "Acme Website", exact: true }),
   ).toBeInViewport({ ratio: 1 });
   await capture(page, info, "continuing-thread");
-  await expect(
-    page.locator(".client-event .client-name").last(),
-  ).toBeInViewport({ ratio: 1 });
+  await expect(page.locator(".thread-client-name")).toBeInViewport({
+    ratio: 1,
+  });
+  await page
+    .getByRole("button", { name: "Copy reply", exact: true })
+    .scrollIntoViewIfNeeded();
   await expect(
     page.getByRole("button", { name: "Copy reply", exact: true }).last(),
   ).toBeInViewport({ ratio: 1 });

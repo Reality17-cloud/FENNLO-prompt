@@ -7,9 +7,9 @@ import {
   type ThreadDetail,
   type ThreadTurn,
 } from "@/lib/workspace-schema";
-import { ThreadEntry } from "./thread-entry";
+import { CurrentMoment } from "./current-moment";
+import { Moments } from "./moments";
 import { RealityComposer } from "./reality-composer";
-import { LoadingIndicator } from "./ui";
 import { ThreadHeader } from "./thread-header";
 export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
   const router = useRouter();
@@ -19,34 +19,17 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
   const [loadingOlder, setLoadingOlder] = useState(false);
+  const [olderError, setOlderError] = useState("");
   const [notice, setNotice] = useState("");
   const timeline = useRef<HTMLElement>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [momentsOpen, setMomentsOpen] = useState(false);
+  const momentsToggle = useRef<HTMLButtonElement>(null);
+  const submission = useRef<{ id: string; draft: boolean } | null>(null);
   const t = detail.thread;
   const latest = detail.turns.at(-1);
-  useEffect(() => {
-    // Keep programmatic scrolling inside the timeline, preserving the mobile shell.
-    const viewport = timeline.current;
-    const turn = viewport?.querySelector(".timeline-turn:last-of-type");
-    const client = turn?.querySelector(".client-event");
-    const target =
-      client &&
-      client.getBoundingClientRect().height < (viewport?.clientHeight ?? 0) / 2
-        ? turn
-        : (turn?.querySelector(".fennlo-turn") ?? turn);
-    if (!viewport || !target) return;
-    viewport.scrollTo({
-      top: Math.max(
-        0,
-        viewport.scrollTop +
-          target.getBoundingClientRect().top -
-          viewport.getBoundingClientRect().top -
-          12,
-      ),
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? "auto"
-        : "smooth",
-    });
-  }, [latest?.id, latest?.status]);
+  const shown = detail.turns.find((turn) => turn.id === selected) ?? latest;
+  const historical = Boolean(shown && shown.id !== latest?.id);
   const base = `/api/threads/${t.id}`;
   const unresolved = detail.turns.find(
     (turn) => turn.status === "FAILED" || turn.status === "PENDING",
@@ -71,37 +54,55 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
     return next;
   }
   useEffect(() => {
-    if (!t.processing) return;
+    if (!t.processing && !generating) return;
+    let cancelled = false;
     const timer = setTimeout(async () => {
       try {
         const next = parseDetail(await api(`/api/threads/${t.id}`));
-        setDetail((old) => ({
-          ...next,
-          turns: [
-            ...old.turns.filter(
-              (turn) =>
-                next.turns[0] &&
-                BigInt(turn.sequence) < BigInt(next.turns[0].sequence),
-            ),
-            ...next.turns,
-          ],
-          older: old.older,
-        }));
+        if (cancelled) return;
+        if (
+          submission.current?.draft &&
+          next.turns.some((turn) => turn.id === submission.current?.id)
+        )
+          setReality("");
+        setDetail((old) =>
+          next.thread.version < old.thread.version
+            ? old
+            : {
+                ...next,
+                turns: [
+                  ...old.turns.filter(
+                    (turn) =>
+                      next.turns[0] &&
+                      BigInt(turn.sequence) < BigInt(next.turns[0].sequence),
+                  ),
+                  ...next.turns,
+                ],
+                older: old.older,
+              },
+        );
       } catch {
+        if (cancelled) return;
         setError(
           "Unable to refresh the thread. Reload to check the saved result.",
         );
       }
     }, 2000);
-    return () => clearTimeout(timer);
-  }, [t.id, t.processing, detail]);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [t.id, t.processing, detail, generating]);
   async function determine(turn?: ThreadTurn) {
     if (busy || t.processing) return;
     const text = turn?.reality ?? reality.trim();
     if (!text) return;
     const id = turn?.id ?? crypto.randomUUID();
+    submission.current = { id, draft: !turn };
     setBusy(true);
     setGenerating(true);
+    setSelected(null);
+    timeline.current?.scrollTo({ top: 0 });
     setError("");
     try {
       const next = parseDetail(
@@ -119,6 +120,7 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
         /* Keep the composer intact if the saved state cannot be read. */
       }
     } finally {
+      submission.current = null;
       setBusy(false);
       setGenerating(false);
     }
@@ -152,6 +154,7 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
   }
   async function older() {
     setLoadingOlder(true);
+    setOlderError("");
     try {
       const next = parseDetail(
         await api(`${base}?before=${detail.turns[0].sequence}`),
@@ -162,13 +165,22 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
         older: next.older,
       }));
     } catch {
-      setError("Unable to load earlier turns. Please try again.");
+      setOlderError("Unable to load earlier turns. Please try again.");
     } finally {
       setLoadingOlder(false);
     }
   }
   return (
     <div className="thread-workspace">
+      <button
+        ref={momentsToggle}
+        className="moments-toggle text-button"
+        onClick={() => setMomentsOpen(true)}
+        aria-haspopup="dialog"
+        aria-expanded={momentsOpen}
+      >
+        Moments
+      </button>
       <ThreadHeader
         thread={t}
         busy={busy}
@@ -176,24 +188,32 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
         error={error}
         notice={notice}
         onUpdate={update}
+        momentContext={
+          historical && (
+            <div className="historical-note">
+              <span>Viewing earlier moment</span>
+              <button
+                className="text-button"
+                onClick={() => {
+                  setSelected(null);
+                  timeline.current?.scrollTo({ top: 0 });
+                }}
+              >
+                Return to latest
+              </button>
+              <p>Goal at this moment: {shown?.goalAtTurn}</p>
+            </div>
+          )
+        }
       />
       <section
         ref={timeline}
         className="timeline"
-        aria-label="Thread timeline"
+        aria-label="Current client situation"
         aria-busy={busy || t.processing}
       >
         <div className="timeline-content">
-          {detail.older && (
-            <button
-              className="secondary compact older-button"
-              onClick={older}
-              disabled={loadingOlder}
-            >
-              {loadingOlder ? "Loading…" : "Load earlier turns"}
-            </button>
-          )}
-          {detail.turns.length === 0 && (
+          {detail.turns.length === 0 && !generating && (
             <div className="timeline-empty">
               <h2>What has happened so far?</h2>
               <p>
@@ -202,21 +222,16 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
               </p>
             </div>
           )}
-          {detail.turns.map((turn) => (
-            <ThreadEntry
-              key={turn.id}
-              turn={turn}
-              clientName={t.clientName}
+          {(shown || generating) && (
+            <CurrentMoment
+              key={shown?.id ?? "first"}
+              turn={shown}
+              historical={historical}
+              determining={!historical && (generating || t.processing)}
               active={t.status === "ACTIVE"}
               disabled={busy || t.processing}
-              onRetry={() => void determine(turn)}
+              onRetry={() => shown && void determine(shown)}
             />
-          ))}
-          {generating && (
-            <p className="loading-line" role="status">
-              <LoadingIndicator />
-              Determining the next move…
-            </p>
           )}
         </div>
       </section>
@@ -242,6 +257,24 @@ export function ThreadWorkspace({ initial }: { initial: ThreadDetail }) {
           </p>
         )}
       </div>
+      {momentsOpen && (
+        <Moments
+          turns={detail.turns}
+          selected={shown?.id}
+          older={detail.older}
+          loading={loadingOlder}
+          error={olderError}
+          onOlder={older}
+          onSelect={(id) => {
+            setSelected(id);
+            timeline.current?.scrollTo({ top: 0 });
+          }}
+          onClose={() => {
+            setMomentsOpen(false);
+            momentsToggle.current?.focus();
+          }}
+        />
+      )}
     </div>
   );
 }

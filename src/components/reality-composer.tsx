@@ -1,7 +1,6 @@
 "use client";
-import { useLayoutEffect, useRef, type FormEvent } from "react";
+import { useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { Icon, LoadingIndicator } from "./ui";
-import { clientPlaceholder } from "@/lib/client-display";
 
 export function RealityComposer({
   value,
@@ -20,6 +19,8 @@ export function RealityComposer({
   blocked: boolean;
   clientName: string | null;
 }) {
+  const [focused, setFocused] = useState(false);
+  const firstName = clientName?.trim().split(/\s+/u)[0];
   const input = useRef<HTMLTextAreaElement>(null);
   useLayoutEffect(() => {
     const element = input.current;
@@ -37,7 +38,14 @@ export function RealityComposer({
     if (!disabled && value.trim()) onSubmit();
   }
   return (
-    <form onSubmit={submit} className="reality-composer" aria-busy={loading}>
+    <form
+      onSubmit={submit}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false);
+      }}
+      className={`reality-composer ${focused && !disabled ? "expanded" : ""}`}
+      aria-busy={loading}
+    >
       <label htmlFor="reality" className="sr-only">
         Client update
       </label>
@@ -46,9 +54,14 @@ export function RealityComposer({
         id="reality"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={clientPlaceholder(clientName)}
+        placeholder={
+          firstName
+            ? `What changed with ${firstName}?`
+            : "What changed with the client?"
+        }
+        onFocus={() => setFocused(true)}
         maxLength={20000}
-        rows={2}
+        rows={1}
         disabled={disabled}
         required
         aria-describedby="composer-hint"
@@ -74,9 +87,13 @@ export function RealityComposer({
             </>
           )}
         </span>
-        <button className="button" disabled={disabled || !value.trim()}>
+        <button
+          className="composer-submit"
+          aria-label={loading ? "Determining…" : "Find next move"}
+          title="Find next move · Ctrl / ⌘ + Enter"
+          disabled={disabled || !value.trim()}
+        >
           {loading ? <LoadingIndicator /> : null}
-          {loading ? "Determining…" : "Find next move"}
           {!loading && <Icon name="arrow" />}
         </button>
       </div>

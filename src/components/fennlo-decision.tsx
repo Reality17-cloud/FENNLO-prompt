@@ -2,21 +2,19 @@ import type { PublicNextMove } from "@/lib/schemas";
 import { SuggestedReply } from "./suggested-reply";
 import { Icon } from "./ui";
 
-export function FennloIdentity() {
-  return (
-    <div className="fennlo-identity">
-      <span aria-hidden="true">
-        <Icon name="arrow" />
-      </span>
-      <span>Fennlo</span>
-    </div>
-  );
-}
-export function FennloDecision({ result }: { result: PublicNextMove }) {
+export function FennloDecision({
+  result,
+  historical = false,
+}: {
+  result: PublicNextMove;
+  historical?: boolean;
+}) {
   return (
     <div className="formation-result">
       <div className="next-operation">
-        <span className="decision-label">Next move</span>
+        <span className="decision-label">
+          {historical ? "Next move at this moment" : "Next move"}
+        </span>
         <p>{result.next_move}</p>
       </div>
       {result.send !== null ? (

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Icon } from "./ui";
 
 export function Modal({
@@ -15,6 +15,17 @@ export function Modal({
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  const [closing, setClosing] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function dismiss() {
+    if (busy || closing) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      dialog.current?.close();
+      return;
+    }
+    setClosing(true);
+    timer.current = setTimeout(() => dialog.current?.close(), 190);
+  }
   useEffect(() => {
     const element = dialog.current;
     element?.showModal();
@@ -22,15 +33,19 @@ export function Modal({
       element?.querySelector<HTMLElement>("[data-autofocus]") ??
       element?.querySelector<HTMLElement>("input, textarea, button")
     )?.focus();
-    return () => element?.close();
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+      element?.close();
+    };
   }, []);
   return (
     <dialog
       ref={dialog}
-      className="modal"
+      className={`modal ${closing ? "closing" : ""}`}
       aria-labelledby={titleId}
       onCancel={(e) => {
-        if (busy) e.preventDefault();
+        e.preventDefault();
+        dismiss();
       }}
       onClose={onClose}
       onClick={(e) => {
@@ -43,7 +58,7 @@ export function Modal({
             e.clientY < box.top ||
             e.clientY > box.bottom)
         )
-          e.currentTarget.close();
+          dismiss();
       }}
       onKeyDown={(e) => {
         if (e.key !== "Tab") return;
@@ -70,7 +85,7 @@ export function Modal({
           className="icon-button"
           aria-label="Close dialog"
           disabled={busy}
-          onClick={() => dialog.current?.close()}
+          onClick={dismiss}
         >
           <Icon name="close" />
         </button>

@@ -51,9 +51,7 @@ test("client options support keyboard navigation, focused editors, Escape and ar
   await expect(
     page.getByRole("dialog", { name: "Rename project", exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByLabel("What are you working on?", { exact: true }),
-  ).toBeFocused();
+  await expect(page.getByLabel("Project", { exact: true })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(
     page.getByRole("dialog", { name: "Rename project", exact: true }),
@@ -92,7 +90,7 @@ test("client options support keyboard navigation, focused editors, Escape and ar
   expect(after.turns[0].kind).toBe("GOAL");
 });
 
-test("client identity colors are consistent across navigation, header, timeline and reload", async ({
+test("client identity colors are consistent across navigation, header and reload", async ({
   page,
 }) => {
   await relationship(page);
@@ -113,11 +111,7 @@ test("client identity colors are consistent across navigation, header, timeline 
   await expect(
     page.getByRole("button", { name: "Copy reply", exact: true }),
   ).toBeVisible();
-  expect(
-    await page
-      .locator(".client-event .client-avatar")
-      .evaluate((el) => getComputedStyle(el).backgroundColor),
-  ).toBe(color);
+  await expect(page.locator(".latest-update .client-avatar")).toHaveCount(0);
   await clients(page);
   const link = page.getByRole("link", {
     name: "Sarah Chen — Acme Website",

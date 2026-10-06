@@ -1,5 +1,11 @@
 "use client";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type FormEvent,
+} from "react";
 import type { ClientThread } from "@/lib/workspace-schema";
 import { clientDisplayName } from "@/lib/client-display";
 import { ClientAvatar } from "./client-identity";
@@ -14,7 +20,9 @@ export function ThreadHeader({
   error,
   notice,
   onUpdate,
+  momentContext,
 }: {
+  momentContext?: ReactNode;
   thread: ClientThread;
   busy: boolean;
   unresolved: boolean;
@@ -216,6 +224,7 @@ export function ThreadHeader({
             </button>
           </div>
         )}
+        <div className="moment-context">{momentContext}</div>
         <span className="save-notice" role="status">
           {notice}
         </span>
@@ -275,7 +284,7 @@ export function ThreadHeader({
                 </>
               ) : editor === "title" ? (
                 <>
-                  <label htmlFor="edit-title">What are you working on?</label>
+                  <label htmlFor="edit-title">Project</label>
                   <input
                     id="edit-title"
                     name="title"

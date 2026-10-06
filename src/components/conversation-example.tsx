@@ -1,6 +1,5 @@
 import { ClientAvatar } from "./client-identity";
-import { ClientEvent } from "./client-event";
-import { FennloDecision, FennloIdentity } from "./fennlo-decision";
+import { FennloDecision } from "./fennlo-decision";
 export function ConversationExample() {
   return (
     <section
@@ -17,24 +16,21 @@ export function ConversationExample() {
         </div>
         <span className="example-caption">Fictional example</span>
       </header>
-      <div className="example-conversation">
-        <ClientEvent
-          name="Sarah Chen"
-          text="The price is a little high."
-          exampleTime="10:42 AM"
-        />
-        <div className="fennlo-turn">
-          <FennloIdentity />
-          <FennloDecision
-            result={{
-              next_move:
-                "Find out what is actually preventing the decision before changing the offer.",
-              send: "Before we change the price, may I ask what the main concern is right now?",
-              why: "Understanding the concern gives you a useful next step before changing the offer.",
-            }}
-          />
-        </div>
+      <p className="thread-goal">Close the project without discounting.</p>
+      <div className="latest-update">
+        <div className="event-heading">Latest update · 2:18 PM</div>
+        <p className="reality-text">
+          I like it, but I need approval from my manager first.
+        </p>
       </div>
+      <FennloDecision
+        result={{
+          next_move:
+            "Find out exactly what the manager needs to approve the project.",
+          send: "Thanks, Sarah. What would your manager need from us to review and approve the project?",
+          why: "The offer itself is not currently the active problem. Manager approval is now the constraint.",
+        }}
+      />
     </section>
   );
 }

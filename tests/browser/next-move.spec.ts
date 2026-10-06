@@ -21,10 +21,8 @@ async function newThread(
   await page.goto("/app");
   await page.getByRole("button", { name: "New client", exact: true }).click();
   await page.getByLabel("Client name", { exact: true }).fill("Sarah Chen");
-  await page
-    .getByLabel("What are you working on?", { exact: false })
-    .fill(title);
-  await page.getByLabel("What are you trying to achieve?").fill(goal);
+  await page.getByLabel("Project", { exact: false }).fill(title);
+  await page.getByLabel("Goal").fill(goal);
   await page.getByRole("button", { name: "Start conversation" }).click();
   await expect(page).toHaveURL(/\/app\/[a-f0-9-]+$/);
   await expect(
@@ -161,6 +159,7 @@ test("persistent thread, result, copy, Why, reload and continued Formation", asy
   await page.screenshot({
     path: resolve(`../fennlo-persistent-${testInfo.project.name}.png`),
     fullPage: true,
+    animations: "disabled",
   });
   await page.reload();
   await expect(
@@ -175,7 +174,7 @@ test("persistent thread, result, copy, Why, reload and continued Formation", asy
   ).toBe(first.goal);
   await expect(
     page.getByRole("button", { name: "Copy reply", exact: true }),
-  ).toHaveCount(2);
+  ).toHaveCount(1);
 });
 
 test("two independent threads, thread switching, goal editing, rename, archive and reopen", async ({
@@ -203,9 +202,7 @@ test("two independent threads, thread switching, goal editing, rename, archive a
   await page
     .getByRole("menuitem", { name: "Rename project", exact: true })
     .click();
-  await page
-    .getByLabel("What are you working on?", { exact: true })
-    .fill("Acme revised");
+  await page.getByLabel("Project", { exact: true }).fill("Acme revised");
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await page
     .getByRole("button", { name: "Client options", exact: true })

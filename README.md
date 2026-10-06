@@ -8,10 +8,10 @@ The goal is direction, not evidence. **Never jump over a missing Formation.** Th
 
 Next.js App Router / React / TypeScript; PostgreSQL via `pg`; Zod validates request, state and result boundaries. Authentication, database access and the OpenAI-compatible provider are server-only modules.
 
-- `/`: one explicitly fictional client interaction, using the real conversation/reply components.
+- `/`: one explicitly fictional client interaction, using the real next-move/reply components.
 - `/signup`, `/signin`: email/password authentication.
 - `/app`: authenticated thread creation and navigation.
-- `/app/[threadId]`: client identity, local conversation timestamps, continuous timeline, persistent goal, personalized client-update composer, suggested replies and thread settings.
+- `/app/[threadId]`: a full-viewport single-client situation, local timestamps, persistent goal, verified next move, white suggested reply and an anchored update composer. Client switching and Moments use overlays; earlier advice stays explicitly historical and drafts are preserved while browsing moments.
 - `/account`: email, sign out and password-confirmed account deletion.
 - `/privacy`, `/terms`: implementation-specific beta policies.
 

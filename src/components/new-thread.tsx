@@ -39,14 +39,9 @@ export function NewThread({ startOpen = false }: { startOpen?: boolean }) {
   if (!creating)
     return (
       <section className="workspace-welcome">
-        <div className="welcome-symbol" aria-hidden="true">
-          <Icon name="conversation" />
-        </div>
-        <p className="workspace-caption">Your client workspace</p>
         <h1>Start with a client.</h1>
         <p>
-          Add the person you’re working with, set what you want to achieve, then
-          bring in what has happened so far.
+          Add the person you’re working with and what you’re trying to achieve.
         </p>
         <button className="button" onClick={() => setCreating(true)}>
           <Icon name="plus" />
@@ -57,11 +52,9 @@ export function NewThread({ startOpen = false }: { startOpen?: boolean }) {
   return (
     <div className="new-thread-page">
       <div className="new-client-intro">
-        <p className="workspace-caption">A new conversation</p>
         <h1>New client</h1>
         <p className="muted">
-          Add the person you’re working with, set what you want to achieve, then
-          bring in what has happened so far.
+          Add the person you’re working with and what you’re trying to achieve.
         </p>
       </div>
       <div className="new-client-form">
@@ -78,8 +71,7 @@ export function NewThread({ startOpen = false }: { startOpen?: boolean }) {
             autoFocus
           />
           <label htmlFor="title">
-            What are you working on?{" "}
-            <span className="muted normal">(optional)</span>
+            Project <span className="muted normal">(optional)</span>
           </label>
           <input
             name="title"
@@ -88,7 +80,7 @@ export function NewThread({ startOpen = false }: { startOpen?: boolean }) {
             maxLength={120}
             disabled={busy}
           />
-          <label htmlFor="goal">What are you trying to achieve?</label>
+          <label htmlFor="goal">Goal</label>
           <textarea
             name="goal"
             id="goal"
